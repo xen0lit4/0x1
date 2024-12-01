@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact</title>
+    <!-- Include Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    <!-- Include CSS Styles -->
+    <style>
+        :root {
+            --background-black: #000000; /* Black background */
+            --line-red: rgba(0, 0, 0, 0);        /* Red line */
+            --text-white: #FFFFFF;
+            --text-black: #0a0a0a;
+            --liquid-color1: #0a0a0a;   /* Liquid effect colors adjusted */
+            --liquid-color2: #f50808;
+            --liquid-color3: #0a0a0a;
+            --liquid-color4: #f50808;
+            cursor: none;
+        }
+
+        body {
+            background-color: var(--background-black); /* Black background */
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden; /* Hide scrollbars as content is fixed */
+            position: relative;
+            user-select: none;
+            cursor: none;
+            /* Center content using Flexbox */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        /* Style for the WebGL background canvas */
+        #sketch-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; /* Below text elements */
+            overflow: hidden;
+            pointer-events: none; /* Allow mouse events to pass through */
+            cursor: none;
+        }
+
+        /* Menu on the left side */
+        #menu {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            z-index: 3; /* Above the canvas */
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            cursor: none;
+        }
+
+        #menu a {
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 300; /* Thinner text */
+            font-size: 14px; /* Adjust size as desired */
+            margin: 5px 0;
+            cursor: none;
+        }
+
+        /* Separate styling for the small logo */
+        #small-logo-container {
+            position: fixed;
+            top: 20px; /* Adjust as needed for precise positioning */
+            left: -11px; /* Adjust this to control how far left you want it */
+            z-index: 3; /* Above the canvas */
+            cursor: none;
+        }
+
+        #small-logo {
+            width: 100px;
+            height: 100px;
+            transition: filter 0.1s; /* Smooth effect transitions */
+            cursor: none;
+            filter: brightness(0) saturate(100%) invert(17%) sepia(100%) saturate(6000%) hue-rotate(1deg) brightness(100%) contrast(100%);
+        }
+
+        /* Style for letters to update colors */
+        .letter {
+            transition: color 0.01s;
+            cursor: none;
+        }
+
+        #custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 10px;
+            height: 10px;
+            background-color: var(--line-red); /* Change to desired cursor color */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        /* Centered content area for contact links */
+        .content {
+            /* Remove position absolute and use Flexbox */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2; /* Above the canvas, below menu */
+            cursor: none;
+        }
+
+        .content a {
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 300;
+            font-size: 24px;
+            margin: 10px 0;
+            display: block;
+            transition: color 0.3s;
+            cursor: none;
+        }
+
+        /* Add hover effect for links */
+        .content a:hover {
+            color: var(--liquid-color2);
+        }
+
+    </style>
+    <!-- Include THREE.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- WebGL Background Canvas -->
+    <div id="sketch-container"></div>
+
+    <!-- Menu on the left side -->
+    <div id="menu">
+        <!--   <a href="page2.html">0x1</a>
+        <a href="page3.html">0x2</a>
+        <!--<a href="page4.html">Team</a>
+        <a href="page5.html">Contact</a>-->
+    </div>
+
+    <!-- Small Logo Container -->
+    <div id="small-logo-container">
+        <a href="page2.html"><img id="small-logo" src="images/Logo.png" alt="Small Logo"></a>
+    </div>
+
+    <div id="custom-cursor"></div>
+
+    <!-- Centered Contact Links -->
+    <div class="content">
+        <a href="mailto:_n3wgr1d_@tuta.io">Mail</a>
+        <a href="https://www.instagram.com/new__grid" target="_blank">Instagram</a>
+    </div>
+
+    <!-- Vertex Shader -->
+    <script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+
+    void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+    </script>
+
+    <!-- Fragment Shader -->
+    <script id="fragmentShader" type="x-shader/x-fragment">
+    precision highp float;
+
+    uniform float uTime;
+    uniform float uOffset; // Shift based on mouse x position or gyroscope
+    uniform vec3 uBackgroundColor; // Customizable black
+    uniform vec3 uLineColor; // Customizable red
+    uniform vec2 uResolution;
+    uniform float scale;
+    uniform vec3 color1, color2, color3, color4;
+    uniform float ax, ay, az, aw;
+    uniform float bx, by;
+    uniform float liquidMixFactor; // Mixing factor for liquid effect
+    varying vec2 vUv;
+
+    const float PI = 3.141592654;
+
+    // Function to generate the "liquid metal" pattern
+    float cheapNoise(vec3 stp) {
+      vec3 p = vec3(stp.st, stp.p);
+      vec4 a = vec4(ax, ay, az, aw);
+      return mix(
+        sin(p.z + p.x * a.x + cos(p.x * a.x - p.z)) *
+        cos(p.z + p.y * a.y + cos(p.y * a.x + p.z)),
+        sin(1. + p.x * a.z + p.z + cos(p.y * a.w - p.z)) *
+        cos(1. + p.y * a.w + p.z + cos(p.x * a.x + p.z)),
+        .436
+      );
+    }
+
+    void main() {
+        vec2 uv = vUv.st;
+
+        // Single line with smooth edges
+        float lineX = uOffset;
+        float distanceToLine = abs(uv.x - lineX);
+
+        // Define thickness and softness
+        float thickness = 0.05;
+        float softness = 0.35;
+
+        // Create a smooth transition
+        float edge = smoothstep(thickness, thickness + softness, distanceToLine);
+
+        // Compute the liquid metal effect color
+        vec2 aR = vec2(uResolution.x / uResolution.y, 1.0);
+        vec2 st = vUv * aR * scale;
+        float S = sin(uTime * .005);
+        float C = cos(uTime * .005);
+        vec2 v1 = vec2(cheapNoise(vec3(st, 2.0)), cheapNoise(vec3(st, 1.0)));
+        vec2 v2 = vec2(
+          cheapNoise(vec3(st + bx*v1 + vec2(C * 1.7, S * 9.2), 0.15 * uTime)),
+          cheapNoise(vec3(st + by*v1 + vec2(S * 8.3, C * 2.8), 0.126 * uTime))
+        );
+        float n = 0.5 + 0.5 * cheapNoise(vec3(st + v2, 0.0));
+
+        vec3 liquidColor = mix(color1,
+          color2,
+          clamp((n*n)*8.,0.0,1.0));
+
+        liquidColor = mix(liquidColor,
+          color3,
+          clamp(length(v1),0.0,1.0));
+
+        liquidColor = mix(liquidColor,
+                    color4,
+                    clamp(length(v2.x),0.0,1.0));
+
+        liquidColor /= n*n + n * 7.0;
+
+        // Blend the liquid metal effect with the red line color
+        vec3 finalLineColor = mix(uLineColor, liquidColor, liquidMixFactor);
+
+        // Mix background and line colors based on edge
+        vec3 color = mix(uBackgroundColor, finalLineColor, 1.0 - edge);
+
+        gl_FragColor = vec4(color, 1.0);
+    }
+    </script>
+
+    <!-- JavaScript Code -->
+    <script>
+    let camera, scene, renderer;
+    let uniforms;
+    let clock;
+
+    const smoothing = 0.07;
+    const sensitivity = 0.6;
+
+    let targetOffset = 0.5;
+    let currentOffset = 0.5;
+    let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    function init() {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('sketch-container').appendChild(renderer.domElement);
+
+        scene = new THREE.Scene();
+
+        camera = new THREE.OrthographicCamera(
+            window.innerWidth / -2, window.innerWidth / 2,
+            window.innerHeight / 2, window.innerHeight / -2,
+            -10000, 10000
+        );
+        camera.position.z = 2;
+
+        clock = new THREE.Clock();
+
+        const computedStyles = getComputedStyle(document.documentElement);
+
+        uniforms = {
+            uTime: { value: 0.002 },
+            uOffset: { value: currentOffset },
+            uBackgroundColor: { value: new THREE.Color(computedStyles.getPropertyValue('--background-black').trim()) },
+            uLineColor: { value: new THREE.Color(computedStyles.getPropertyValue('--line-red').trim()) },
+            uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            scale: { value: 3 },
+            ax: { value: 5.0 },
+            ay: { value: 7.0 },
+            az: { value: 9.0 },
+            aw: { value: 13.0 },
+            bx: { value: -1.0 },
+            by: { value: -1.0 },
+            color1: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color1').trim()) },
+            color2: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color2').trim()) },
+            color3: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color3').trim()) },
+            color4: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color4').trim()) },
+            liquidMixFactor: { value: 0.2 } // Adjust as desired (0.0 to 1.0)
+        };
+
+        const geometry = new THREE.PlaneGeometry(window.innerWidth, window.innerHeight);
+
+        const material = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader: document.getElementById('vertexShader').textContent,
+            fragmentShader: document.getElementById('fragmentShader').textContent
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        window.addEventListener('resize', onWindowResize, false);
+        document.addEventListener('mousemove', onMouseMove, false);
+
+        // Initialize gyroscope control if on mobile
+        if (isMobile) {
+            initGyroscope();
+        }
+
+        wrapTextInSpans();
+    }
+
+    function wrapTextInSpans() {
+        const textElements = document.querySelectorAll('#menu a');
+        textElements.forEach(element => {
+            const text = element.textContent;
+            const wrappedText = text.split('').map(char => {
+                if (char === ' ') return ' ';
+                return `<span class="letter">${char}</span>`;
+            }).join('');
+            element.innerHTML = `<span class="text-content">${wrappedText}</span>`;
+        });
+
+        // Wrap letters in contact links
+        const contactLinks = document.querySelectorAll('.content a');
+        contactLinks.forEach(element => {
+            const text = element.textContent;
+            const wrappedText = text.split('').map(char => {
+                if (char === ' ') return ' ';
+                return `<span class="letter">${char}</span>`;
+            }).join('');
+            element.innerHTML = `<span class="text-content">${wrappedText}</span>`;
+        });
+    }
+
+    function onMouseMove(event) {
+        if (isMobile) return; // Ignore mouse movement on mobile devices
+        const mouseX = event.clientX / window.innerWidth;
+        targetOffset = mouseX * sensitivity + currentOffset * (1 - sensitivity);
+    }
+
+    function initGyroscope() {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // For iOS 13+ devices
+            DeviceOrientationEvent.requestPermission()
+                .then(response => {
+                    if (response === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientation, false);
+                    } else {
+                        console.log('Gyroscope permission denied');
+                    }
+                })
+                .catch(console.error);
+        } else {
+            // Non iOS devices
+            window.addEventListener('deviceorientation', handleOrientation, false);
+        }
+    }
+
+    function handleOrientation(event) {
+        let gamma = event.gamma; // Left to right tilt in degrees, from -90 to 90
+        if (gamma === null || gamma === undefined) return; // Handle unsupported devices
+
+        // Clamp gamma to [-90, 90]
+        gamma = Math.max(-90, Math.min(90, gamma));
+
+        // Normalize gamma to [0,1]
+        gamma = (gamma + 90) / 180;
+
+        targetOffset = gamma * sensitivity + currentOffset * (1 - sensitivity);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        uniforms.uTime.value = clock.getElapsedTime();
+        currentOffset += (targetOffset - currentOffset) * smoothing;
+        uniforms.uOffset.value = currentOffset;
+
+        renderer.render(scene, camera);
+
+        updateFontColors();
+        updateLogoEffects();
+    }
+
+    function onWindowResize() {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.left = window.innerWidth / -2;
+        camera.right = window.innerWidth / 2;
+        camera.top = window.innerHeight / 2;
+        camera.bottom = window.innerHeight / -2;
+        camera.updateProjectionMatrix();
+
+        // Update resolution uniform
+        uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+    }
+
+    init();
+    animate();
+
+    function updateFontColors() {
+        const letters = document.querySelectorAll('.letter');
+        letters.forEach(letter => {
+            const rect = letter.getBoundingClientRect();
+            const letterCenterX = rect.left + rect.width / 2;
+            const uvX = letterCenterX / window.innerWidth;
+
+            const distanceToLine = Math.abs(uvX - currentOffset);
+            const thickness = 0.09;
+            const softness = 1;
+
+            const edge = smoothstepClient(distanceToLine, thickness + softness, thickness);
+            const colorRatio = 1.0 - edge;
+
+            const textWhite = getComputedStyle(document.documentElement).getPropertyValue('--text-white').trim();
+            const textBlack = getComputedStyle(document.documentElement).getPropertyValue('--text-black').trim();
+
+            letter.style.color = colorRatio < 0.3 ? textBlack : textWhite;
+        });
+    }
+
+    function smoothstepClient(x, edge0, edge1) {
+        let t = (x - edge1) / (edge0 - edge1);
+        t = Math.max(0.0, Math.min(1.0, t));
+        return t * t * (3.0 - 2.0 * t);
+    }
+
+    function updateLogoEffects() {
+        const smallLogo = document.getElementById('small-logo');
+        const smallLogoRect = smallLogo.getBoundingClientRect();
+        const smallLogoCenterX = smallLogoRect.left + smallLogoRect.width / 2;
+        const lineX = currentOffset * window.innerWidth;
+
+        // Apply red filter if the line is near the small logo
+        if (Math.abs(smallLogoCenterX - lineX) < 50) { // Adjust distance as needed
+            smallLogo.style.filter = 'brightness(0) saturate(100%) invert(19%) sepia(100%) saturate(7480%) hue-rotate(1deg) brightness(96%) contrast(109%)';
+        } else {
+            smallLogo.style.filter = 'brightness(0) saturate(100%) invert(17%) sepia(100%) saturate(6000%) hue-rotate(1deg) brightness(100%) contrast(100%)';
+        }
+    }
+
+    function initializeImageEffects() {
+        // No image effects to initialize on the Contact page
+    }
+
+    // Custom Cursor Movement
+    document.addEventListener('mousemove', function(e) {
+        if (isMobile) return; // Hide custom cursor on mobile
+        const cursor = document.getElementById('custom-cursor');
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+    });
+
+    // Change Cursor Appearance on Hover
+    const cursor = document.getElementById('custom-cursor');
+
+    document.querySelectorAll('a, button, #small-logo-container').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            if (isMobile) return;
+            cursor.style.transform = 'scale(1.4) translate(-50%, -50%)';
+            cursor.style.backgroundColor = 'white'; // Change color on hover
+        });
+        el.addEventListener('mouseleave', () => {
+            if (isMobile) return;
+            cursor.style.transform = 'scale(1) translate(-50%, -50%)';
+            cursor.style.backgroundColor = 'red'; // Revert to original color
+        });
+    });
+
+    </script>
+</body>
+</html>
