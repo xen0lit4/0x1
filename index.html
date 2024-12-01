@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <!-- Include Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Use the same font as in the first page -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    <!-- Include CSS Styles -->
+    <style>
+        :root {
+            --background-black: #f50808; /* Customizable black color */
+            --line-red: #0a0a0a; /* Customizable red color */
+            --text-white: #FFFFFF;
+            --text-black: #0a0a0a;
+            --liquid-color1: #f50808; /* Customize liquid effect colors */
+            --liquid-color2: #0a0a0a;
+            --liquid-color3: #f50808;
+            --liquid-color4: #0a0a0a;
+            cursor: none;
+        }
+
+        body {
+            background-color: var(--background-black); /* Black background */
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+            position: relative;
+            user-select: none;
+            /* Hide scrollbar for IE, Edge and Firefox */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+            cursor: none;
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Style for the WebGL background canvas */
+        #sketch-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; /* Below text elements */
+            overflow: hidden;
+            pointer-events: none; /* Allow mouse events to pass through */
+        }
+
+        /* Menu on the left side */
+        #menu {
+            position: fixed; /* Ensure the menu remains fixed */
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            z-index: 3; /* Above the canvas */
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            cursor: none;
+        }
+
+        #menu a {
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 300; /* Thinner text */
+            font-size: 14px; /* Adjust size as desired */
+            margin: 5px 0;
+            cursor: none;
+        }
+
+        /* Separate styling for the small logo */
+        #small-logo-container {
+            position: fixed; /* Set to fixed to remain static */
+            top: 20px; /* Adjust as needed for precise positioning */
+            left: -11px; /* Adjust this to control how far left you want it */
+            z-index: 3; /* Above the canvas */
+            cursor: none;
+        }
+
+        #small-logo {
+            width: 100px;
+            height: 100px;
+            transition: filter 0.1s; /* Smooth effect transitions */
+            cursor: none;
+        }
+
+        /* Style for letters to update colors */
+        .letter {
+            transition: color 0.01s;
+            cursor: none;
+        }
+
+        /* New Structure on the Right Side of the Menu */
+        #right-structure {
+            position: relative;
+            top: 0;
+            left: 200px; /* Adjust based on menu width + desired spacing */
+            width: calc(100% - 220px); /* Adjust to account for menu width and spacing */
+            z-index: 3; /* Ensure it sits above the canvas */
+            padding: 220px;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        /* Scrollable Content Container */
+        #right-content {
+            width: 100%;
+            padding-right: 100px; /* For scrollbar spacing */
+            cursor: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        #right-content {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        #right-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Styling for Sections */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: var(--text-white);
+            margin: 20px 0 10px 0;
+            font-size: 24px;
+            cursor: none;
+        }
+
+        .section p {
+            color: var(--text-white);
+            margin: 10px 0;
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 800px; /* Adjust as needed */
+            cursor: none;
+        }
+
+        /* Updated Image Container */
+        .image-container {
+            position: relative;
+            margin: 50px auto; /* Center the container with top and bottom margin */
+            text-align: center;
+            cursor: none;
+            width: 100%; /* Full width */
+            max-width: 800px; /* Adjust as needed */
+            overflow: hidden;
+            padding-bottom: 45%; /* Adjusted to 45% as per your request */
+        }
+
+        /* Image Styling */
+        .image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            object-fit: cover; /* Maintain aspect ratio and cover the container */
+        }
+
+        /* Setup Name Styling */
+        .image-container p {
+            position: relative;
+            z-index: 2; /* Ensure text is above images */
+            margin-bottom: 10px;
+            color: var(--text-white);
+            cursor: none;
+        }
+
+        /* Modal Styles */
+        #image-modal {
+            display: none;
+            position: fixed;
+            z-index: 5;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Remove scrollbars */
+            background-color: rgba(10, 10, 10, 0.95);
+            align-items: center;
+            justify-content: center;
+            cursor: none;
+        }
+
+        #image-modal img,
+        #image-modal video {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        /* Ensure links inside right-content have dynamic effects */
+        #right-content a {
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 300;
+            cursor: none;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 1200px) {
+            #right-structure {
+                left: 150px;
+                width: calc(100% - 170px);
+            }
+
+            .section h2 {
+                font-size: 22px;
+            }
+
+            .section p {
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #menu {
+                left: 10px;
+            }
+
+            #right-structure {
+                left: 120px;
+                width: calc(100% - 140px);
+                padding: 15px;
+            }
+
+            .section h2 {
+                font-size: 20px;
+            }
+
+            .section p {
+                font-size: 14px;
+                max-width: 600px;
+            }
+
+            .image-container {
+                max-width: 100%;
+                margin: 20px auto;
+            }
+        }
+
+        body {
+             cursor: none; /* Hide the default cursor */
+        }
+
+        #custom-cursor {
+             position: fixed;
+             top: 0;
+             left: 0;
+             width: 10px;
+             height: 10px;
+             background-color: var(--background-black); /* Change to desired cursor color */
+             border-radius: 50%;
+             pointer-events: none;
+             z-index: 10000;
+             transform: translate(-50%, -50%);
+             transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+    </style>
+    <!-- Include THREE.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- WebGL Background Canvas -->
+    <div id="sketch-container"></div>
+    <!-- WebGL Background Canvas -->
+    <div id="sketch-container"></div>
+
+    <!-- Menu on the left side -->
+    <div id="menu">
+        <a href="page2.html">0x1</a>
+        <a href="page3.html">0x2</a>
+        <!--<a href="page4.html">Team</a>-->
+        <a href="page5.html">Contact</a>
+    </div>
+
+    <!-- Small Logo Container -->
+    <div id="small-logo-container">
+        
+         <img id="small-logo" src="images/Logo.png" alt="Small Logo">
+        
+    </div>
+
+    <!-- New Scrollable Structure on the Right Side of the Menu -->
+    <div id="right-structure">
+        <div id="right-content">
+            <!-- Detailed Brief Description Section -->
+            <div class="section" id="detailed-brief">
+                <h2 style="margin-bottom: 50px;"></h2>
+                <p style="margin-bottom: 50px; text-align: left;">
+                    Xenolith is a visionary collective where the boundaries of art and technology dissolve into a seamless tapestry of innovation. By harmonizing the rhythms of music, the strokes of visual artistry, the ingenuity of sustainable design, and the precision of digital craftsmanship, Xenolith crafts immersive realms that breathe and evolve. Each project is a living organism, pulsating with creativity and inviting audiences to transcend the conventional and inhabit spaces where every moment is a sensory revelation. In the alchemy of diverse disciplines, Xenolith redefines the landscape of artistic expression, forging experiences that resonate deeply and linger long after the final note fades.
+                </p>
+            </div>
+    </div>
+
+    <!-- Modal for Image or Video Display -->
+    <div id="image-modal" onclick="closeModal()">
+        <!-- Content will be dynamically inserted here -->
+    </div>
+
+    <div id="custom-cursor"></div>
+
+        <!-- Vertex Shader -->
+        <script id="vertexShader" type="x-shader/x-vertex">
+            varying vec2 vUv;
+        
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+            }
+            </script>
+        
+            <!-- Fragment Shader -->
+            <script id="fragmentShader" type="x-shader/x-fragment">
+            precision highp float;
+        
+            uniform float uTime;
+            uniform float uOffset; // Shift based on mouse x position
+            uniform vec3 uBackgroundColor; // Customizable black
+            uniform vec3 uLineColor; // Customizable red
+            uniform vec2 uResolution;
+            uniform float scale;
+            uniform vec3 color1, color2, color3, color4;
+            uniform float ax, ay, az, aw;
+            uniform float bx, by;
+            uniform float liquidMixFactor; // Mixing factor for liquid effect
+            varying vec2 vUv;
+        
+            const float PI = 3.141592654;
+        
+            // Function to generate the "liquid metal" pattern
+            float cheapNoise(vec3 stp) {
+              vec3 p = vec3(stp.st, stp.p);
+              vec4 a = vec4(ax, ay, az, aw);
+              return mix(
+                sin(p.z + p.x * a.x + cos(p.x * a.x - p.z)) *
+                cos(p.z + p.y * a.y + cos(p.y * a.x + p.z)),
+                sin(1. + p.x * a.z + p.z + cos(p.y * a.w - p.z)) *
+                cos(1. + p.y * a.w + p.z + cos(p.x * a.x + p.z)),
+                .436
+              );
+            }
+        
+            void main() {
+                vec2 uv = vUv.st;
+        
+                // Single line with smooth edges
+                float lineX = uOffset;
+                float distanceToLine = abs(uv.x - lineX);
+        
+                // Define thickness and softness
+                float thickness = 0.05;
+                float softness = 0.003;
+        
+                // Create a smooth transition
+                float edge = smoothstep(thickness, thickness + softness, distanceToLine);
+        
+                // Compute the liquid metal effect color
+                vec2 aR = vec2(uResolution.x / uResolution.y, 1.0);
+                vec2 st = vUv * aR * scale;
+                float S = sin(uTime * .005);
+                float C = cos(uTime * .005);
+                vec2 v1 = vec2(cheapNoise(vec3(st, 2.0)), cheapNoise(vec3(st, 1.0)));
+                vec2 v2 = vec2(
+                  cheapNoise(vec3(st + bx*v1 + vec2(C * 1.7, S * 9.2), 0.15 * uTime)),
+                  cheapNoise(vec3(st + by*v1 + vec2(S * 8.3, C * 2.8), 0.126 * uTime))
+                );
+                float n = 0.5 + 0.5 * cheapNoise(vec3(st + v2, 0.0));
+        
+                vec3 liquidColor = mix(color1,
+                  color2,
+                  clamp((n*n)*8.,0.0,1.0));
+        
+                liquidColor = mix(liquidColor,
+                  color3,
+                  clamp(length(v1),0.0,1.0));
+        
+                liquidColor = mix(liquidColor,
+                            color4,
+                            clamp(length(v2.x),0.0,1.0));
+        
+                liquidColor /= n*n + n * 7.0;
+        
+                // Blend the liquid metal effect with the red line color
+                vec3 finalLineColor = mix(uLineColor, liquidColor, liquidMixFactor);
+        
+                // Mix background and line colors based on edge
+                vec3 color = mix(uBackgroundColor, finalLineColor, 1.0 - edge);
+        
+                gl_FragColor = vec4(color, 1.0);
+            }
+            </script>
+        
+            <!-- JavaScript Code -->
+            <script>
+            let camera, scene, renderer;
+            let uniforms;
+            let clock;
+        
+            const smoothing = 0.07;
+            const sensitivity = 0.6;
+        
+            let targetOffset = 0.5;
+            let currentOffset = 0.5;
+            let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+            function init() {
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                document.getElementById('sketch-container').appendChild(renderer.domElement);
+        
+                scene = new THREE.Scene();
+        
+                camera = new THREE.OrthographicCamera(
+                    window.innerWidth / -2, window.innerWidth / 2,
+                    window.innerHeight / 2, window.innerHeight / -2,
+                    -10000, 10000
+                );
+                camera.position.z = 2;
+        
+                clock = new THREE.Clock();
+        
+                const computedStyles = getComputedStyle(document.documentElement);
+        
+                uniforms = {
+                    uTime: { value: 0.002 },
+                    uOffset: { value: currentOffset },
+                    uBackgroundColor: { value: new THREE.Color(computedStyles.getPropertyValue('--background-black').trim()) },
+                    uLineColor: { value: new THREE.Color(computedStyles.getPropertyValue('--line-red').trim()) },
+                    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                    scale: { value: 3 },
+                    ax: { value: 5.0 },
+                    ay: { value: 7.0 },
+                    az: { value: 9.0 },
+                    aw: { value: 13.0 },
+                    bx: { value: -1.0 },
+                    by: { value: -1.0 },
+                    color1: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color1').trim()) },
+                    color2: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color2').trim()) },
+                    color3: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color3').trim()) },
+                    color4: { value: new THREE.Color(computedStyles.getPropertyValue('--liquid-color4').trim()) },
+                    liquidMixFactor: { value: 0.2 } // Adjust as desired (0.0 to 1.0)
+                };
+        
+                const geometry = new THREE.PlaneGeometry(window.innerWidth, window.innerHeight);
+        
+                const material = new THREE.ShaderMaterial({
+                    uniforms: uniforms,
+                    vertexShader: document.getElementById('vertexShader').textContent,
+                    fragmentShader: document.getElementById('fragmentShader').textContent
+                });
+        
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+        
+                window.addEventListener('resize', onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+        
+                // Initialize gyroscope control if on mobile
+                if (isMobile) {
+                    initGyroscope();
+                }
+        
+                wrapTextInSpans();
+                initializeImageEffects();
+            }
+        
+            function wrapTextInSpans() {
+                const textElements = document.querySelectorAll('#menu a, #right-content h2, #right-content p, #right-content a');
+                textElements.forEach(element => {
+                    const text = element.textContent;
+                    const wrappedText = text.split('').map(char => {
+                        if (char === ' ') return ' ';
+                        return `<span class="letter">${char}</span>`;
+                    }).join('');
+                    element.innerHTML = `<span class="text-content">${wrappedText}</span>`;
+                });
+            }
+        
+            function onMouseMove(event) {
+                if (isMobile) return; // Ignore mouse movement on mobile devices
+                const mouseX = event.clientX / window.innerWidth;
+                targetOffset = mouseX * sensitivity + currentOffset * (1 - sensitivity);
+            }
+        
+            function initGyroscope() {
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    // For iOS 13+ devices
+                    DeviceOrientationEvent.requestPermission()
+                        .then(response => {
+                            if (response === 'granted') {
+                                window.addEventListener('deviceorientation', handleOrientation, false);
+                            } else {
+                                console.log('Gyroscope permission denied');
+                            }
+                        })
+                        .catch(console.error);
+                } else {
+                    // Non iOS devices
+                    window.addEventListener('deviceorientation', handleOrientation, false);
+                }
+            }
+        
+            function handleOrientation(event) {
+                let gamma = event.gamma; // Left to right tilt in degrees, from -90 to 90
+                // Normalize gamma to [0,1]
+                gamma = (gamma + 90) / 180;
+                targetOffset = gamma * sensitivity + currentOffset * (1 - sensitivity);
+            }
+        
+            function animate() {
+                requestAnimationFrame(animate);
+                uniforms.uTime.value = clock.getElapsedTime();
+                currentOffset += (targetOffset - currentOffset) * smoothing;
+                uniforms.uOffset.value = currentOffset;
+        
+                renderer.render(scene, camera);
+        
+                updateFontColors();
+                updateLogoEffects();
+                updateImageEffects();
+            }
+        
+            function onWindowResize() {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.left = window.innerWidth / -2;
+                camera.right = window.innerWidth / 2;
+                camera.top = window.innerHeight / 2;
+                camera.bottom = window.innerHeight / -2;
+                camera.updateProjectionMatrix();
+        
+                // Update resolution uniform
+                uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+            }
+        
+            init();
+            animate();
+        
+            function updateFontColors() {
+                const letters = document.querySelectorAll('.letter');
+                letters.forEach(letter => {
+                    const rect = letter.getBoundingClientRect();
+                    const letterCenterX = rect.left + rect.width / 2;
+                    const uvX = letterCenterX / window.innerWidth;
+        
+                    const distanceToLine = Math.abs(uvX - currentOffset);
+                    const thickness = 0.05;
+                    const softness = 0.005;
+        
+                    const edge = smoothstepClient(distanceToLine, thickness + softness, thickness);
+                    const colorRatio = 1.0 - edge;
+        
+                    const textWhite = getComputedStyle(document.documentElement).getPropertyValue('--text-white').trim();
+                    const textBlack = getComputedStyle(document.documentElement).getPropertyValue('--text-black').trim();
+        
+                    letter.style.color = colorRatio < 0.3 ? textBlack : textWhite;
+                });
+            }
+        
+            function smoothstepClient(x, edge0, edge1) {
+                let t = (x - edge1) / (edge0 - edge1);
+                t = Math.max(0.0, Math.min(1.0, t));
+                return t * t * (3.0 - 2.0 * t);
+            }
+        
+            function updateLogoEffects() {
+                const smallLogo = document.getElementById('small-logo');
+                const smallLogoRect = smallLogo.getBoundingClientRect();
+                const smallLogoCenterX = smallLogoRect.left + smallLogoRect.width / 2;
+                const lineX = currentOffset * window.innerWidth;
+        
+                // Apply red filter if the line is near the small logo
+                if (Math.abs(smallLogoCenterX - lineX) < 50) { // Adjust distance as needed
+                    smallLogo.style.filter = 'brightness(0) saturate(100%) invert(19%) sepia(100%) saturate(7480%) hue-rotate(1deg) brightness(96%) contrast(109%)';
+                } else {
+                    smallLogo.style.filter = 'none';
+                }
+            }
+        
+            function initializeImageEffects() {
+                const imageContainers = document.querySelectorAll('.image-container');
+                imageContainers.forEach(container => {
+                    const asciiImage = container.querySelector('.ascii-image');
+                    const editedImage = container.querySelector('.edited-image');
+        
+                    // Click event to open modal
+                    container.addEventListener('click', function(event) {
+                        event.stopPropagation();
+                        const originalImageSrc = container.getAttribute('data-original-image');
+                        const videoSrc = container.getAttribute('data-video-src');
+                        openModal(originalImageSrc, videoSrc);
+                    });
+                });
+            }
+        
+            function updateImageEffects() {
+                const imageContainers = document.querySelectorAll('.image-container');
+                imageContainers.forEach(container => {
+                    const rect = container.getBoundingClientRect();
+                    const containerLeft = rect.left;
+                    const containerRight = rect.right;
+                    const containerWidth = rect.width;
+        
+                    const lineX = currentOffset * window.innerWidth;
+        
+                    const asciiImage = container.querySelector('.ascii-image');
+                    const editedImage = container.querySelector('.edited-image');
+        
+                    // Calculate the mask position in percentage
+                    const maskPosition = ((lineX - containerLeft) / containerWidth) * 100;
+                    const maskSize = 30; // Adjust this value to control the width of the line effect
+        
+                    // Ensure maskPosition is within 0% to 100%
+                    const clampedMaskPosition = Math.min(Math.max(maskPosition, 0), 100);
+        
+                    // Masks for edited image (revealing) and ASCII image (hiding)
+                    const editedMask = `linear-gradient(to right, transparent ${clampedMaskPosition - maskSize}%, black ${clampedMaskPosition}%, transparent ${clampedMaskPosition + maskSize}%)`;
+                    const asciiMask = `linear-gradient(to right, black ${clampedMaskPosition - maskSize}%, transparent ${clampedMaskPosition}%, black ${clampedMaskPosition + maskSize}%)`;
+        
+                    // Apply masks
+                    editedImage.style.maskImage = editedMask;
+                    editedImage.style.webkitMaskImage = editedMask;
+        
+                    asciiImage.style.maskImage = asciiMask;
+                    asciiImage.style.webkitMaskImage = asciiMask;
+                });
+            }
+        
+            // Modal Functions
+            function openModal(imageSrc, videoSrc) {
+                const modal = document.getElementById('image-modal');
+                modal.innerHTML = ''; // Clear previous content
+        
+                if (videoSrc) {
+                    // Create video element
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.autoplay = true;
+                    video.style.maxWidth = '90%';
+                    video.style.maxHeight = '90%';
+        
+                    // Set source
+                    const source = document.createElement('source');
+                    source.src = videoSrc;
+                    source.type = 'video/mp4';
+        
+                    video.appendChild(source);
+                    modal.appendChild(video);
+                } else if (imageSrc) {
+                    // Create image element
+                    const img = document.createElement('img');
+                    img.src = imageSrc;
+                    img.alt = 'Full Image';
+                    img.style.maxWidth = '90%';
+                    img.style.maxHeight = '90%';
+        
+                    modal.appendChild(img);
+                }
+        
+                modal.style.display = 'flex';
+            }
+        
+            function closeModal() {
+                const modal = document.getElementById('image-modal');
+                modal.style.display = 'none';
+                modal.innerHTML = ''; // Clear content
+            }
+        
+            // Custom Cursor Movement
+            document.addEventListener('mousemove', function(e) {
+                if (isMobile) return; // Hide custom cursor on mobile
+                const cursor = document.getElementById('custom-cursor');
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+        
+            // Change Cursor Appearance on Hover
+            const cursor = document.getElementById('custom-cursor');
+        
+            document.querySelectorAll('a, button, .image-container').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    if (isMobile) return;
+                    cursor.style.transform = 'scale(1.4) translate(-50%, -50%)';
+                    cursor.style.backgroundColor = 'white'; // Change color on hover
+                });
+                el.addEventListener('mouseleave', () => {
+                    if (isMobile) return;
+                    cursor.style.transform = 'scale(1) translate(-50%, -50%)';
+                    cursor.style.backgroundColor = 'red'; // Revert to original color
+                });
+            });
+            </script>
+        </body>
+        </html>
+ 
