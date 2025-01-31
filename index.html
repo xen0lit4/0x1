@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XENOLITH Mobile Menu</title>
+    <title>XENOLITH</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@200&display=swap" rel="stylesheet">
-
     <style>
         /* GLOBAL RESETS */
         * {
@@ -210,7 +209,36 @@
             cursor: pointer;
             z-index: 1001;
         }
+        .landing-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
+            height: 100%;
+            padding: 20px;
+        }
 
+        .landing-content p {
+            margin: 20px 0;
+            font-size: 1.1em;
+            max-width: 200px;
+        }
+
+        .highlight {
+            background-color: #e40404;
+            color: #060606;
+            font-weight: 1000;
+            padding: 0 5px;
+        }
+
+        /* About section styles */
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
         /* CONTACT FORM => centered, black, no rounding, white text */
         .contact-form-container {
             display: flex;
@@ -392,13 +420,13 @@
         <!-- MAIN CONTENT -->
         <div class="content">
             <div class="text-content">
-                <p>This page is separated by categories. Select an item to view details.</p>
+                <p></p>
             </div>
         </div>
 
         <!-- BOTTOM CENTER LINK -->
         <div class="bottom-center-link">
-            <a href="https://www.instagram.com/new__grid/" target="_blank"><span style="background-color: #e40404; color: #060606; font-weight: 1000;">Socials</span></a>
+            <a href="https://www.instagram.com/new__grid/" target="_blank">Socials</a>
         </div>
     </div><!-- end .container -->
 
@@ -463,6 +491,18 @@
                 thumbnail: '_assets/Photography_M_RedGhost.jpg',
                 youtube: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
                 description: '<p>Home Series: Familiar, comforting imagery.</p>'
+            },
+            {
+                title: 'Home Series',
+                thumbnail: '_assets/Photography_M_RedGhost.jpg',
+                youtube: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                description: '<p>Home Series: Familiar, comforting imagery.</p>'
+            },
+            {
+                title: 'Home Series',
+                thumbnail: '_assets/Photography_M_RedGhost.jpg',
+                youtube: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                description: '<p>Home Series: Familiar, comforting imagery.</p>'
             }
         ];
 
@@ -486,36 +526,45 @@
 
         // About section with center alignment for main paragraphs (except "About" and "Enter the hush")
         const aboutHTML = `
+        <div class="landing-content">
+            <div style="margin-top: 0px;">
+            <span style="color: #e40404; font-weight: 1000;">Xenolith</span> is an artist collective focused on the intersection of <span style="background-color: #e40404; color: #060606; font-weight: 1000;">MUSIC</span>, <span style="background-color: #e40404; color: #060606; font-weight: 1000;">ART</span>, and <span style="background-color: #e40404; color: #060606; font-weight: 1000;">EXPERIENCE</span>.
+            We exist in the margins, guided by low pulses and the promise of what’s just out of reach. Our work is driven by a singular vision—raw and uncompromising—focused on ideas, labor, and trust, not money or ego. <span style="background-color: #e40404; color: #060606; font-weight: 1000;">WE CREATE BECAUSE WE MUST</span>, never distracted by the surface.
+            We are not a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>, a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>, or a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>, though we encompass elements of all. What we are is a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWRORK.</span>
+        </div>
+`;
+    // Landing section HTML
+    const landingHTML = `
   <div style="margin-top: 20px;">
-    <h2>About</h2><br /><br />
+    <h2></h2><br /><br />
     <p><strong><span style="background-color: #e40404; color: #060606; font-weight: 1000;">
-      Enter the hush.
+      ENTER THE HUSH.
     </span></strong></p><br /><br />
 
-    <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>,</strong> but that doesn’t quite capture it.</p>
     <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>,</strong> but that doesn’t quite capture it.</p>
+    <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>,</strong> but that doesn’t quite capture it.</p>
     <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>,</strong> but that only scratches the surface.</p>
     <p>What we are, truly, depends on who’s asking. We’re a
        <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWORK</span>.
     </p><br /><br />
-  </div>
-`;
+    `;
 
         // contentData object
         const contentData = {
-            'About': aboutHTML,
-            'Works': {
-                gallery: worksData
-            },
-            'Contact': contactFormHTML
-        };
+        'Landing': landingHTML,  // New section
+        'About': aboutHTML,
+        'Works': {
+            gallery: worksData
+        },
+        'Contact': contactFormHTML
+    };
 
-        // Desktop category events
-        document.querySelectorAll('.category-title').forEach(cat => {
-            cat.addEventListener('click', () => {
-                displayContent(cat.textContent.trim());
-            });
+    // Desktop category events (excluding the 'Landing' section)
+    document.querySelectorAll('.category-title').forEach(cat => {
+        cat.addEventListener('click', () => {
+            displayContent(cat.textContent.trim());
         });
+    });
 
         // MOBILE MENU
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -766,7 +815,7 @@
             animateTitle();
 
             // Auto display 'About'
-            displayContent('About');
+            displayContent('Landing');
         });
     </script>
 </body>
