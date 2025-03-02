@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XENOLITH</title>
   <!-- Favicon (update the href with your actual favicon path) -->
-  <link rel="icon" type="image/x-icon" href="_assets/WebIcon.ico">
+  <link rel="icon" type="image/x-icon" href="_assets/WebIcon_Black_BG.ico">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@200&display=swap" rel="stylesheet">
   <style>
     /* GLOBAL RESETS */
@@ -18,7 +18,7 @@
     }
     html, body {
       height: 100%;
-      overflow: hidden; /* container won't scroll the page */
+      overflow: hidden; /* no page scrolling outside the container */
     }
     body {
       background: #060606;
@@ -99,10 +99,12 @@
     .text-content::-webkit-scrollbar {
       display: none;
     }
+
     /* If gallery is present, reduce text area (optional) */
     .content.has-gallery .text-content {
       height: calc(100% - 200px);
     }
+
     /* VERTICAL-GALLERY => 2 columns on desktop, shrinks to 1 column on small screens */
     .vertical-gallery {
       position: absolute;
@@ -118,6 +120,7 @@
     .vertical-gallery::-webkit-scrollbar {
       display: none;
     }
+
     /* Fade-in & out logic */
     .work-item {
       opacity: 0;
@@ -146,56 +149,50 @@
       margin: 0 auto;
       filter: none;
     }
-    /* OVERLAY / MODAL */
+
+    /* OVERLAY => entire overlay can scroll */
     .overlay {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.8);
       display: none;
-      align-items: center;
-      justify-content: center;
+      overflow-y: auto; /* the entire overlay scrolls */
+      scrollbar-width: none; /* hide scrollbar in Firefox */
+      -ms-overflow-style: none; /* hide scrollbar in IE/Edge */
       z-index: 1000;
     }
+    .overlay::-webkit-scrollbar {
+      display: none; /* hide scrollbar in Chrome/Safari */
+    }
+
+    /* The content box is centered and has padding. */
     .overlay-content {
-      display: flex;
-      flex-direction: column;
+      position: relative;
+      margin: 60px auto;
       width: 90%;
       max-width: 1200px;
-      height: 90%; /* Fixed height so flex items work properly */
       background: #000;
       color: #fff;
-      position: relative;
-      /* Removed overflow: hidden to allow inner scrolling */
-    }
-    .overlay-gallery {
-      flex: 0 0 auto;
       padding: 20px;
     }
+    .overlay-gallery {
+      margin-bottom: 20px;
+    }
+    .overlay-gallery iframe,
     .overlay-gallery img,
-    .overlay-gallery video,
-    .overlay-gallery iframe {
+    .overlay-gallery video {
       width: 100%;
       height: auto;
-      margin-bottom: 20px;
       display: block;
+      margin-bottom: 20px;
     }
     .overlay-description {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 0 20px 20px 20px;
-      margin-top: 20px;
-      /* Hide scrollbar in Firefox, IE and Edge */
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .overlay-description::-webkit-scrollbar {
-      width: 0px;
-      background: transparent;
+      /* put your text here; it can be as tall as needed, 
+         the entire overlay will scroll */
     }
     .overlay-close {
-      position: absolute;
+      position: fixed;
       top: 20px;
       right: 40px;
       font-size: 30px;
@@ -203,6 +200,7 @@
       cursor: pointer;
       z-index: 1001;
     }
+
     .landing-content {
       display: flex;
       flex-direction: column;
@@ -223,6 +221,7 @@
       font-weight: 1000;
       padding: 0 5px;
     }
+
     /* About section styles */
     .about-content {
       max-width: 800px;
@@ -266,6 +265,7 @@
       background: #fff;
       color: #000;
     }
+
     /* BOTTOM CENTER LINK */
     .bottom-center-link {
       position: absolute;
@@ -281,10 +281,12 @@
       text-decoration: none;
       color: #000;
     }
+
     /* XENOLITH scramble */
     .dud {
       opacity: 0.5;
     }
+
     /* MOBILE MENU BUTTON & OVERLAY */
     .mobile-menu-btn {
       display: none;
@@ -351,6 +353,7 @@
       font-size: 28px;
       cursor: pointer;
     }
+
     /* MEDIA QUERIES FOR MOBILE */
     @media (max-width: 768px) {
       .sidebar {
@@ -362,11 +365,17 @@
       .vertical-gallery {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       }
+      .overlay-close {
+        top: 60px; /* or any other offset you prefer */
+        right: 20px; /* keep the same or adjust if needed */
     }
+}
+
     /* "Center" the About section text */
     .about-centered-text {
       text-align: center;
     }
+
     /* Responsive video container for YouTube embeds */
     .video-container {
       position: relative;
@@ -375,12 +384,14 @@
       overflow: hidden;
       width: 100%;
     }
+    
     .video-container iframe {
       position: absolute;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
     }
+    
   </style>
 </head>
 <body>
@@ -402,19 +413,23 @@
         </div>
       </div>
     </div>
+
     <!-- MAIN CONTENT -->
     <div class="content">
       <div class="text-content">
         <p></p>
       </div>
     </div>
+
     <!-- BOTTOM CENTER LINK -->
     <div class="bottom-center-link">
-      <a href="https://www.instagram.com/new__grid/" target="_blank">Socials</a>
+      <a href="https://linktr.ee/xen0lit4" target="_blank"><span style="background-color: #e40404; color: #060606; font-weight: 1000;">Socials</span></a>
     </div>
   </div><!-- end .container -->
+
   <!-- Mobile Menu Button -->
   <div class="mobile-menu-btn" id="mobileMenuBtn"></div>
+
   <!-- Mobile Menu Overlay -->
   <div class="mobile-menu-overlay" id="mobileMenuOverlay">
     <div class="mobile-menu-close" id="mobileMenuClose">&times;</div>
@@ -425,14 +440,19 @@
       <div class="mobile-menu-item" data-cat="Contact">Contact</div>
     </div>
   </div>
+
   <!-- OVERLAY (Modal) for Works / Media -->
   <div class="overlay" id="overlay">
+    <!-- A fixed close button so user can always close even if scrolled down -->
     <div class="overlay-close" id="overlay-close">&times;</div>
+
+    <!-- A single content block that can be scrolled -->
     <div class="overlay-content">
       <div class="overlay-gallery" id="overlay-gallery"></div>
       <div class="overlay-description" id="overlay-description"></div>
     </div>
   </div>
+
   <script>
     // WORKS data
     const worksData = [
@@ -493,6 +513,7 @@
         description: '<p>Home Series: Familiar, comforting imagery.</p>'
       }
     ];
+
     // Contact form HTML with mailto action
     const contactFormHTML = `
       <div class="contact-form-container">
@@ -507,16 +528,18 @@
         </form>
       </div>
     `;
+
     // About section HTML
     const aboutHTML = `
       <div class="landing-content">
         <div style="margin-top: 0px;">
           <span style="color: #e40404; font-weight: 1000;">Xenolith</span> is an artist collective focused on the intersection of <span style="background-color: #e40404; color: #060606; font-weight: 1000;">MUSIC</span>, <span style="background-color: #e40404; color: #060606; font-weight: 1000;">ART</span>, and <span style="background-color: #e40404; color: #060606; font-weight: 1000;">EXPERIENCE</span>.
           We exist in the margins, guided by low pulses and the promise of what’s just out of reach. Our work is driven by a singular vision—raw and uncompromising—focused on ideas, labor, and trust, not money or ego. <span style="background-color: #e40404; color: #060606; font-weight: 1000;">WE CREATE BECAUSE WE MUST</span>, never distracted by the surface.
-          We are not a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>, a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>, or a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>, though we encompass elements of all. What we are is a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWORK.</span>
+          We are not a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>, a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>, or a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>, though we encompass elements of all. What we are is a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWORK</span>.
         </div>
       </div>
     `;
+
     // Landing section HTML
     const landingHTML = `
       <div style="margin-top: 20px;">
@@ -524,6 +547,7 @@
         <p><strong><span style="background-color: #e40404; color: #060606; font-weight: 1000;">
           ENTER THE HUSH.
         </span></strong></p><br /><br />
+
         <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>,</strong> but that doesn’t quite capture it.</p>
         <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>,</strong> but that doesn’t quite capture it.</p>
         <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>,</strong> but that only scratches the surface.</p>
@@ -531,6 +555,7 @@
            <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWORK</span>.
         </p><br /><br />
     `;
+
     // contentData object
     const contentData = {
       'Landing': landingHTML,
@@ -538,17 +563,20 @@
       'Works': { gallery: worksData },
       'Contact': contactFormHTML
     };
+
     // Desktop category events
     document.querySelectorAll('.category-title').forEach(cat => {
       cat.addEventListener('click', () => {
         displayContent(cat.textContent.trim());
       });
     });
+
     // MOBILE MENU
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
     const mobileMenuClose = document.getElementById('mobileMenuClose');
     const mobileMenuItems = document.querySelectorAll('.mobile-menu-item');
+
     mobileMenuBtn.addEventListener('click', () => {
       mobileMenuOverlay.classList.add('active');
     });
@@ -562,10 +590,12 @@
         displayContent(catName);
       });
     });
+
     // Show content function
     function displayContent(categoryName) {
       const textContent = document.querySelector('.text-content');
       removeGallery();
+
       if (contentData[categoryName]) {
         const data = contentData[categoryName];
         if (typeof data === 'object' && data.gallery) {
@@ -576,6 +606,7 @@
         }
       }
     }
+
     // Remove gallery if exists
     function removeGallery() {
       const contentArea = document.querySelector('.content');
@@ -583,18 +614,23 @@
       const existing = document.querySelector('.vertical-gallery');
       if (existing) existing.remove();
     }
+
     // Build works gallery
     function createWorksGallery(items) {
       const contentArea = document.querySelector('.content');
       contentArea.classList.add('has-gallery');
+
       const gallery = document.createElement('div');
       gallery.classList.add('vertical-gallery');
+
       items.forEach((item, i) => {
         const workItem = document.createElement('div');
         workItem.classList.add('work-item');
+
         const titleEl = document.createElement('div');
         titleEl.classList.add('work-title');
         titleEl.textContent = item.title || `Work #${i+1}`;
+
         const box = document.createElement('div');
         box.classList.add('gallery-item');
         if (item.thumbnail) {
@@ -603,14 +639,17 @@
         box.addEventListener('click', () => {
           openYouTubeOverlay(item.youtube, item.description);
         });
+
         workItem.appendChild(titleEl);
         workItem.appendChild(box);
         gallery.appendChild(workItem);
       });
+
       contentArea.appendChild(gallery);
       setupFadeInOut();
     }
-    // Setup fade in/out using IntersectionObserver
+
+    // IntersectionObserver => fade in if in view, fade out if out
     function setupFadeInOut() {
       const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -621,49 +660,68 @@
           }
         });
       }, { threshold: 0.1 });
+
       document.querySelectorAll('.work-item').forEach(item => {
         observer.observe(item);
       });
     }
-    // Open YouTube overlay with responsive video and description
+
+    // YOUTUBE overlay: entire overlay is scrollable
     function openYouTubeOverlay(youtubeLink, descHTML) {
       const overlay = document.getElementById('overlay');
       const overlayGallery = document.getElementById('overlay-gallery');
       const overlayDescription = document.getElementById('overlay-description');
+
       overlayGallery.innerHTML = '';
       overlayDescription.innerHTML = '';
+
+      // Create a responsive container for the video
       const videoContainer = document.createElement('div');
       videoContainer.classList.add('video-container');
+
       const iframe = document.createElement('iframe');
       iframe.src = `${youtubeLink}?autoplay=1`;
       iframe.frameBorder = '0';
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allow =
+        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
       iframe.allowFullscreen = true;
+
       videoContainer.appendChild(iframe);
       overlayGallery.appendChild(videoContainer);
+
+      // Insert the description
       if (descHTML) {
         overlayDescription.innerHTML = descHTML;
       }
-      overlay.style.display = 'flex';
+
+      // Show overlay
+      overlay.style.display = 'block';
     }
-    // Close overlay function
+
+    // Close overlay
     const overlayClose = document.getElementById('overlay-close');
     overlayClose.addEventListener('click', closeOverlay);
     const overlay = document.getElementById('overlay');
     overlay.addEventListener('click', (e) => {
+      // If user clicks outside the content box, close
       if (e.target === overlay) {
         closeOverlay();
       }
     });
     function closeOverlay() {
       overlay.style.display = 'none';
-      overlay.querySelectorAll('iframe').forEach(ifr => { ifr.src = ''; });
+      // Stop iframes
+      overlay.querySelectorAll('iframe').forEach(ifr => {
+        ifr.src = '';
+      });
+      // Stop videos
       overlay.querySelectorAll('video').forEach(vid => {
         vid.pause();
         vid.currentTime = 0;
       });
     }
-    // TEXT SCRAMBLE Class
+
+    // TEXT SCRAMBLE
     class TextScramble {
       constructor(el) {
         this.el = el;
@@ -717,16 +775,20 @@
         return this.chars[Math.floor(Math.random() * this.chars.length)];
       }
     }
-    // On DOM load: animate header and load Landing content
+
+    // On load => scramble "XENOLITH" and auto-load Landing
     document.addEventListener('DOMContentLoaded', () => {
       const headerEl = document.querySelector('.header h1');
       const fx = new TextScramble(headerEl);
+
       function animateTitle() {
         fx.setText('XENOLITH').then(() => {
           setTimeout(animateTitle, 1000);
         });
       }
       animateTitle();
+
+      // Auto display 'Landing'
       displayContent('Landing');
     });
   </script>
