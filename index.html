@@ -169,17 +169,10 @@
       background: #000;
       color: #fff;
       position: relative;
-      overflow-y: auto;
     }
     .overlay-gallery {
-      width: 100%;
-      overflow-y: auto;
+      flex: 0 0 auto;
       padding: 20px;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .overlay-gallery::-webkit-scrollbar {
-      display: none;
     }
     .overlay-gallery img,
     .overlay-gallery video,
@@ -190,8 +183,10 @@
       display: block;
     }
     .overlay-description {
-      display: block;
+      flex: 1 1 auto;
+      overflow-y: auto;
       padding: 0 20px 20px 20px;
+      margin-top: 20px;
     }
     .overlay-description::-webkit-scrollbar {
       display: none;
@@ -390,10 +385,8 @@
     }
 
     /* "Center" the lines in the About section except h2 / "Enter the hush" */
-    /* We'll use a specific class or inline style for the paragraphs. 
-       Below is an optional approach: */
     .about-centered-text {
-      text-align: center; /* center paragraphs */
+      text-align: center;
     }
 
     /* Responsive video container for YouTube embeds */
@@ -476,7 +469,15 @@
         title: 'Red Dreams',
         thumbnail: '_assets/reddreams.jpg',
         youtube: 'https://www.youtube.com/embed/CcBfQrdjxkk',
-        description: '<p>New Dawn: A truly immersive piece.</p>'
+        description: `<p>
+          This is a long and formatted description of the work “Red Dreams.”
+          <br><br>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum vestibulum.
+          <br><br>
+          Cras venenatis euismod malesuada. Morbi tempus, massa at volutpat auctor, nulla tortor venenatis metus, at dignissim elit nulla in est.
+          <br><br>
+          Donec vel mauris quam. Curabitur a nulla sit amet arcu interdum hendrerit.
+        </p>`
       },
       {
         title: 'The Last Of Us',
@@ -685,7 +686,7 @@
       });
     }
 
-    // YOUTUBE overlay with responsive video container
+    // YOUTUBE overlay with responsive video container and description below
     function openYouTubeOverlay(youtubeLink, descHTML) {
       const overlay = document.getElementById('overlay');
       const overlayGallery = document.getElementById('overlay-gallery');
@@ -790,7 +791,7 @@
       }
     }
 
-    // On load => scramble "XENOLITH" and auto-load About
+    // On load => scramble "XENOLITH" and auto-load Landing
     document.addEventListener('DOMContentLoaded', () => {
       const headerEl = document.querySelector('.header h1');
       const fx = new TextScramble(headerEl);
