@@ -18,14 +18,13 @@
     }
     html, body {
       height: 100%;
-      overflow: hidden; /* no page scrolling outside the container */
+      overflow: hidden; /* container won't scroll the page */
     }
     body {
       background: #060606;
       color: #edecec;
       line-height: 1.2;
     }
-
     /* MAIN CONTAINER => sidebar + content */
     .container {
       display: flex;
@@ -33,7 +32,6 @@
       position: relative;
       overflow: hidden;
     }
-
     /* SIDEBAR (desktop only; hidden on mobile) */
     .sidebar {
       width: 15vw;
@@ -81,7 +79,6 @@
       left: -15px;
       color: #efefef;
     }
-
     /* MAIN CONTENT */
     .content {
       flex: 1;
@@ -99,12 +96,10 @@
     .text-content::-webkit-scrollbar {
       display: none;
     }
-
     /* If gallery is present, reduce text area (optional) */
     .content.has-gallery .text-content {
       height: calc(100% - 200px);
     }
-
     /* VERTICAL-GALLERY => 2 columns on desktop, shrinks to 1 column on small screens */
     .vertical-gallery {
       position: absolute;
@@ -120,7 +115,6 @@
     .vertical-gallery::-webkit-scrollbar {
       display: none;
     }
-
     /* Fade-in & out logic */
     .work-item {
       opacity: 0;
@@ -149,24 +143,21 @@
       margin: 0 auto;
       filter: none;
     }
-
-    /* OVERLAY => entire overlay can scroll */
+    /* OVERLAY / MODAL */
     .overlay {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.8);
       display: none;
-      overflow-y: auto; /* the entire overlay scrolls */
-      scrollbar-width: none; /* hide scrollbar in Firefox */
-      -ms-overflow-style: none; /* hide scrollbar in IE/Edge */
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       z-index: 1000;
     }
     .overlay::-webkit-scrollbar {
-      display: none; /* hide scrollbar in Chrome/Safari */
+      display: none;
     }
-
-    /* The content box is centered and has padding. */
     .overlay-content {
       position: relative;
       margin: 60px auto;
@@ -188,8 +179,7 @@
       margin-bottom: 20px;
     }
     .overlay-description {
-      /* put your text here; it can be as tall as needed, 
-         the entire overlay will scroll */
+      /* the description can be as tall as needed */
     }
     .overlay-close {
       position: fixed;
@@ -200,7 +190,6 @@
       cursor: pointer;
       z-index: 1001;
     }
-
     .landing-content {
       display: flex;
       flex-direction: column;
@@ -221,7 +210,6 @@
       font-weight: 1000;
       padding: 0 5px;
     }
-
     /* About section styles */
     .about-content {
       max-width: 800px;
@@ -265,7 +253,6 @@
       background: #fff;
       color: #000;
     }
-
     /* BOTTOM CENTER LINK */
     .bottom-center-link {
       position: absolute;
@@ -281,12 +268,10 @@
       text-decoration: none;
       color: #000;
     }
-
     /* XENOLITH scramble */
     .dud {
       opacity: 0.5;
     }
-
     /* MOBILE MENU BUTTON & OVERLAY */
     .mobile-menu-btn {
       display: none;
@@ -353,7 +338,6 @@
       font-size: 28px;
       cursor: pointer;
     }
-
     /* MEDIA QUERIES FOR MOBILE */
     @media (max-width: 768px) {
       .sidebar {
@@ -365,17 +349,16 @@
       .vertical-gallery {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       }
+      /* Move close button lower on mobile */
       .overlay-close {
-        top: 60px; /* or any other offset you prefer */
-        right: 20px; /* keep the same or adjust if needed */
+        top: 60px;
+        right: 20px;
+      }
     }
-}
-
     /* "Center" the About section text */
     .about-centered-text {
       text-align: center;
     }
-
     /* Responsive video container for YouTube embeds */
     .video-container {
       position: relative;
@@ -384,14 +367,12 @@
       overflow: hidden;
       width: 100%;
     }
-    
     .video-container iframe {
       position: absolute;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
     }
-    
   </style>
 </head>
 <body>
@@ -413,23 +394,19 @@
         </div>
       </div>
     </div>
-
     <!-- MAIN CONTENT -->
     <div class="content">
       <div class="text-content">
         <p></p>
       </div>
     </div>
-
     <!-- BOTTOM CENTER LINK -->
     <div class="bottom-center-link">
-      <a href="https://linktr.ee/xen0lit4" target="_blank"><span style="background-color: #e40404; color: #060606; font-weight: 1000;">Socials</span></a>
+      <a href="https://linktr.ee/xen0lit4" target="_blank"><span style="background-color: #e40404; color: #060606; font-weight: 1000;">Socials</span></Socials></a>
     </div>
   </div><!-- end .container -->
-
   <!-- Mobile Menu Button -->
   <div class="mobile-menu-btn" id="mobileMenuBtn"></div>
-
   <!-- Mobile Menu Overlay -->
   <div class="mobile-menu-overlay" id="mobileMenuOverlay">
     <div class="mobile-menu-close" id="mobileMenuClose">&times;</div>
@@ -440,19 +417,14 @@
       <div class="mobile-menu-item" data-cat="Contact">Contact</div>
     </div>
   </div>
-
   <!-- OVERLAY (Modal) for Works / Media -->
   <div class="overlay" id="overlay">
-    <!-- A fixed close button so user can always close even if scrolled down -->
     <div class="overlay-close" id="overlay-close">&times;</div>
-
-    <!-- A single content block that can be scrolled -->
     <div class="overlay-content">
       <div class="overlay-gallery" id="overlay-gallery"></div>
       <div class="overlay-description" id="overlay-description"></div>
     </div>
   </div>
-
   <script>
     // WORKS data
     const worksData = [
@@ -539,7 +511,6 @@
         </div>
       </div>
     `;
-
     // Landing section HTML
     const landingHTML = `
       <div style="margin-top: 20px;">
@@ -547,7 +518,6 @@
         <p><strong><span style="background-color: #e40404; color: #060606; font-weight: 1000;">
           ENTER THE HUSH.
         </span></strong></p><br /><br />
-
         <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>,</strong> but that doesn’t quite capture it.</p>
         <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>,</strong> but that doesn’t quite capture it.</p>
         <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>,</strong> but that only scratches the surface.</p>
@@ -555,7 +525,6 @@
            <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWORK</span>.
         </p><br /><br />
     `;
-
     // contentData object
     const contentData = {
       'Landing': landingHTML,
@@ -563,20 +532,17 @@
       'Works': { gallery: worksData },
       'Contact': contactFormHTML
     };
-
     // Desktop category events
     document.querySelectorAll('.category-title').forEach(cat => {
       cat.addEventListener('click', () => {
         displayContent(cat.textContent.trim());
       });
     });
-
     // MOBILE MENU
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
     const mobileMenuClose = document.getElementById('mobileMenuClose');
     const mobileMenuItems = document.querySelectorAll('.mobile-menu-item');
-
     mobileMenuBtn.addEventListener('click', () => {
       mobileMenuOverlay.classList.add('active');
     });
@@ -590,12 +556,10 @@
         displayContent(catName);
       });
     });
-
     // Show content function
     function displayContent(categoryName) {
       const textContent = document.querySelector('.text-content');
       removeGallery();
-
       if (contentData[categoryName]) {
         const data = contentData[categoryName];
         if (typeof data === 'object' && data.gallery) {
@@ -606,7 +570,6 @@
         }
       }
     }
-
     // Remove gallery if exists
     function removeGallery() {
       const contentArea = document.querySelector('.content');
@@ -614,23 +577,23 @@
       const existing = document.querySelector('.vertical-gallery');
       if (existing) existing.remove();
     }
-
     // Build works gallery
     function createWorksGallery(items) {
       const contentArea = document.querySelector('.content');
       contentArea.classList.add('has-gallery');
-
       const gallery = document.createElement('div');
       gallery.classList.add('vertical-gallery');
-
       items.forEach((item, i) => {
         const workItem = document.createElement('div');
         workItem.classList.add('work-item');
-
         const titleEl = document.createElement('div');
         titleEl.classList.add('work-title');
-        titleEl.textContent = item.title || `Work #${i+1}`;
-
+        // For the first two items, wrap the title in the styled span
+        if (i < 2) {
+          titleEl.innerHTML = `<span style="background-color: #e40404; color: #060606; font-weight: 1000;">${item.title || `Work #${i+1}`}</span>`;
+        } else {
+          titleEl.textContent = item.title || `Work #${i+1}`;
+        }
         const box = document.createElement('div');
         box.classList.add('gallery-item');
         if (item.thumbnail) {
@@ -639,17 +602,14 @@
         box.addEventListener('click', () => {
           openYouTubeOverlay(item.youtube, item.description);
         });
-
         workItem.appendChild(titleEl);
         workItem.appendChild(box);
         gallery.appendChild(workItem);
       });
-
       contentArea.appendChild(gallery);
       setupFadeInOut();
     }
-
-    // IntersectionObserver => fade in if in view, fade out if out
+    // Setup fade in/out using IntersectionObserver
     function setupFadeInOut() {
       const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -660,68 +620,49 @@
           }
         });
       }, { threshold: 0.1 });
-
       document.querySelectorAll('.work-item').forEach(item => {
         observer.observe(item);
       });
     }
-
-    // YOUTUBE overlay: entire overlay is scrollable
+    // Open YouTube overlay with responsive video and description
     function openYouTubeOverlay(youtubeLink, descHTML) {
       const overlay = document.getElementById('overlay');
       const overlayGallery = document.getElementById('overlay-gallery');
       const overlayDescription = document.getElementById('overlay-description');
-
       overlayGallery.innerHTML = '';
       overlayDescription.innerHTML = '';
-
-      // Create a responsive container for the video
       const videoContainer = document.createElement('div');
       videoContainer.classList.add('video-container');
-
       const iframe = document.createElement('iframe');
       iframe.src = `${youtubeLink}?autoplay=1`;
       iframe.frameBorder = '0';
-      iframe.allow =
-        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
       iframe.allowFullscreen = true;
-
       videoContainer.appendChild(iframe);
       overlayGallery.appendChild(videoContainer);
-
-      // Insert the description
       if (descHTML) {
         overlayDescription.innerHTML = descHTML;
       }
-
-      // Show overlay
       overlay.style.display = 'block';
     }
-
-    // Close overlay
+    // Close overlay function
     const overlayClose = document.getElementById('overlay-close');
     overlayClose.addEventListener('click', closeOverlay);
     const overlay = document.getElementById('overlay');
     overlay.addEventListener('click', (e) => {
-      // If user clicks outside the content box, close
       if (e.target === overlay) {
         closeOverlay();
       }
     });
     function closeOverlay() {
       overlay.style.display = 'none';
-      // Stop iframes
-      overlay.querySelectorAll('iframe').forEach(ifr => {
-        ifr.src = '';
-      });
-      // Stop videos
+      overlay.querySelectorAll('iframe').forEach(ifr => { ifr.src = ''; });
       overlay.querySelectorAll('video').forEach(vid => {
         vid.pause();
         vid.currentTime = 0;
       });
     }
-
-    // TEXT SCRAMBLE
+    // TEXT SCRAMBLE Class
     class TextScramble {
       constructor(el) {
         this.el = el;
@@ -775,20 +716,16 @@
         return this.chars[Math.floor(Math.random() * this.chars.length)];
       }
     }
-
-    // On load => scramble "XENOLITH" and auto-load Landing
+    // On DOM load: animate header and load Landing content
     document.addEventListener('DOMContentLoaded', () => {
       const headerEl = document.querySelector('.header h1');
       const fx = new TextScramble(headerEl);
-
       function animateTitle() {
         fx.setText('XENOLITH').then(() => {
           setTimeout(animateTitle, 1000);
         });
       }
       animateTitle();
-
-      // Auto display 'Landing'
       displayContent('Landing');
     });
   </script>
