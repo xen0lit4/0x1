@@ -55,26 +55,9 @@
 
     h1 {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(80px, 22vw, 130px);
-      letter-spacing: 0.02em;
-      line-height: 0.88;
-      display: block;
-      color: var(--fg);
-    }
-
-    h1 .slash {
-      background: linear-gradient(135deg, #CC0000, #d4d4d4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      opacity: 0.35;
-    }
-
-    h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(56px, 15vw, 90px);
+      font-size: clamp(72px, 20vw, 120px);
       letter-spacing: 0.04em;
-      line-height: 0.88;
+      line-height: 1;
       display: block;
       background: linear-gradient(135deg, #CC0000, #d4d4d4);
       -webkit-background-clip: text;
@@ -121,13 +104,13 @@
     }
 
     .links a {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 64px 16px;
       align-items: center;
-      justify-content: space-between;
       padding: 20px 0;
       text-decoration: none;
       color: var(--fg);
-      gap: 16px;
+      gap: 12px;
     }
 
     .links a:hover .platform-name {
@@ -179,13 +162,14 @@
       text-transform: uppercase;
       transition: color 0.15s, border-color 0.15s;
       white-space: nowrap;
+      text-align: center;
     }
 
     .link-arrow {
       font-size: 11px;
       color: var(--fg-dim);
       transition: transform 0.15s;
-      flex-shrink: 0;
+      text-align: right;
     }
 
     /* ---- FOOTER ---- */
@@ -223,10 +207,7 @@
   <main>
 
     <div class="title-block">
-      <div>
-        <h1>ae<span class="slash">/</span></h1>
-        <h2>vum<span class="blink"></span></h2>
-      </div>
+      <h1>aevum<span class="blink"></span></h1>
     </div>
 
     <p class="section-label">listen / stream</p>
