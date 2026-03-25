@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XENOLITH</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      background: #000;
+      color: #fff;
+      font-family: Impact, 'Arial Narrow', sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .link {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      text-decoration: none;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: clamp(22px, 6vw, 28px);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.1s;
+    }
+
+    .link:hover {
+      color: #ff0000;
+    }
+
+    .link:active {
+      opacity: 0.4;
+    }
+
+    .tag {
+      font-size: clamp(10px, 2.5vw, 12px);
+      letter-spacing: 0.2em;
+      color: #555;
+      transition: color 0.1s;
+    }
+
+    .link:hover .tag {
+      color: #7a0000;
+    }
+  </style>
+</head>
+<body>
+  <nav class="links">
+    <a class="link" href="https://xenolith.eu" target="_blank" rel="noopener">WEBSITE</a>
+    <a class="link" href="https://instagram.com/new__grid" target="_blank" rel="noopener"><span class="tag">VISUAL</span> INSTAGRAM</a>
+    <a class="link" href="https://soundcloud.com/xenolith" target="_blank" rel="noopener">SOUNDCLOUD <span class="tag">MUSIC</span></a>
+  </nav>
+</body>
+</html>
