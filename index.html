@@ -1,733 +1,1007 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XENOLITH</title>
-  <!-- Favicon (update the href with your actual favicon path) -->
   <link rel="icon" type="image/x-icon" href="_assets/WebIcon_Black_BG.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@200&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Roboto+Mono:wght@200;300&display=swap" rel="stylesheet">
   <style>
-    /* GLOBAL RESETS */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Roboto Mono', monospace;
-      font-weight: 200;
+    /* ─── RESET & VARS ─────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #060606;
+      --bg2:      #0d0d0d;
+      --fg:       #edecec;
+      --red:      #e40404;
+      --red-dim:  rgba(228,4,4,0.12);
+      --mono:     'Roboto Mono', monospace;
+      --display:  'Barlow Condensed', sans-serif;
     }
-    html, body {
-      height: 100%;
-      overflow: hidden; /* container won't scroll the page */
-    }
+
+    html { scroll-behavior: smooth; scroll-snap-type: y mandatory; }
+
     body {
-      background: #060606;
-      color: #edecec;
-      line-height: 1.2;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--mono);
+      font-weight: 200;
+      overflow-x: hidden;
+      cursor: none;
     }
-    /* MAIN CONTAINER => sidebar + content */
-    .container {
+
+    /* ─── INTRO SCREEN ─────────────────────────────────────────── */
+    #intro-screen {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 99999;
       display: flex;
-      height: 100%;
-      position: relative;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      pointer-events: all;
       overflow: hidden;
     }
-    /* SIDEBAR (desktop only; hidden on mobile) */
-    .sidebar {
-      width: 15vw;
-      min-width: 150px;
-      max-width: 300px;
-      background: #030303;
-      color: #edecec;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      height: 100%;
-      border-right: 1px solid rgba(0,0,0,0.2);
+
+    #intro-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.9s cubic-bezier(0.4,0,0.2,1);
     }
-    .header {
-      margin-bottom: 10px;
-    }
-    .header h1 {
-      font-size: 30px;
-      margin-bottom: 10px;
-      color: #e40404; /* red text */
-    }
-    .categories {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-    }
-    .category {
-      margin-bottom: 2px;
-    }
-    .category-title {
-      font-size: 16px;
-      cursor: pointer;
-      opacity: 0.9;
-      user-select: none;
-      position: relative;
-      margin-bottom: 1px;
-    }
-    .category-title::before {
-      content: '>';
-      margin-right: 5px;
-      opacity: 1;
-      position: absolute;
-      left: -15px;
-      color: #efefef;
-    }
-    /* MAIN CONTENT */
-    .content {
-      flex: 1;
-      position: relative;
-      height: 100%;
-      padding: 2px 40px 32px 40px;
-      overflow: hidden;
-    }
-    .text-content {
-      overflow-y: auto;
-      height: 100%;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .text-content::-webkit-scrollbar {
+
+    /* Bloom glow layers behind the text */
+    #intro-bloom {
       display: none;
     }
-    /* If gallery is present, reduce text area (optional) */
-    .content.has-gallery .text-content {
-      height: calc(100% - 200px);
+
+    #intro-text {
+      position: relative;
+      z-index: 2;
+      font-family: var(--display);
+      font-weight: 900;
+      font-size: clamp(6px, 1.2vw, 16px);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1;
     }
-    /* VERTICAL-GALLERY => 2 columns on desktop, shrinks to 1 column on small screens */
-    .vertical-gallery {
+
+    .intro-bar {
       position: absolute;
-      top: 2px; bottom: 32px; left: 0; right: 0;
+      bottom: 0; left: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--red), transparent);
+      width: 0%;
+      transition: background 0.1s linear;
+    }
+
+    /* ─── CUSTOM CURSOR ────────────────────────────────────────── */
+    .cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--red);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+      transform: translate(-50%, -50%);
+    }
+    .cursor.expand { transform: translate(-50%, -50%) scale(4); opacity: 0.3; }
+
+    /* ─── NAV ──────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 24px 48px;
+      mix-blend-mode: normal;
+    }
+
+    nav::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(6,6,6,0.9) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+      list-style: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-links li a,
+    .nav-links li span {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--fg);
+      text-decoration: none;
+      opacity: 0.7;
+      cursor: none;
+      transition: opacity 0.2s, color 0.2s;
+      position: relative;
+    }
+
+    .nav-links li a::after,
+    .nav-links li span::after {
+      content: '';
+      position: absolute;
+      bottom: -3px; left: 0;
+      width: 0; height: 1px;
+      background: var(--red);
+      transition: width 0.3s ease;
+    }
+
+    .nav-links li a:hover,
+    .nav-links li span:hover {
+      opacity: 1;
+      color: var(--fg);
+    }
+    .nav-links li a:hover::after,
+    .nav-links li span:hover::after { width: 100%; }
+
+    /* ─── SECTIONS (scroll-snap) ───────────────────────────────── */
+    .section {
+      min-height: 100vh;
+      scroll-snap-align: start;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* ─── HERO ─────────────────────────────────────────────────── */
+    #hero {
+      overflow: hidden;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding-bottom: 80px;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 60% 50%, rgba(228,4,4,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(228,4,4,0.04) 0%, transparent 60%);
+    }
+
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+    }
+
+    .hero-rule {
+      position: absolute;
+      left: 48px;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent 0%, rgba(228,4,4,0.4) 30%, rgba(228,4,4,0.4) 70%, transparent 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 0 48px 0 64px;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.3s forwards;
+    }
+
+    .hero-title {
+      font-family: var(--display);
+      font-weight: 900;
+      font-size: clamp(80px, 14vw, 200px);
+      line-height: 0.88;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: var(--fg);
+      opacity: 0;
+      animation: fadeUp 1s ease 0.5s forwards;
+      white-space: nowrap;
+    }
+
+    .hero-title .line-red { color: var(--red); }
+
+    .hero-sub {
+      margin-top: 32px;
+      font-family: var(--mono);
+      font-weight: 200;
+      font-size: 13px;
+      line-height: 1.7;
+      max-width: 420px;
+      color: rgba(237,236,236,0.55);
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.9s forwards;
+    }
+
+    .hero-sub strong {
+      background: var(--red);
+      color: var(--bg);
+      font-weight: 700;
+      padding: 0 4px;
+    }
+
+    .hero-cta {
+      margin-top: 40px;
+      display: flex;
+      gap: 16px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1.1s forwards;
+    }
+
+    .btn {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      text-decoration: none;
+      cursor: none;
+      transition: all 0.25s ease;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: var(--red);
+      color: var(--fg);
+      border: 1px solid var(--red);
+    }
+    .btn-primary:hover {
+      background: transparent;
+      color: var(--red);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid rgba(237,236,236,0.25);
+    }
+    .btn-ghost:hover {
+      border-color: var(--fg);
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      animation: fadeIn 1s ease 2s forwards;
+    }
+    .scroll-hint span {
+      font-family: var(--display);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(237,236,236,0.3);
+    }
+    .scroll-line {
+      width: 40px; height: 1px;
+      background: rgba(237,236,236,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    .scroll-line::after {
+      content: '';
+      position: absolute;
+      left: -100%;
+      top: 0;
+      width: 100%; height: 100%;
+      background: var(--red);
+      animation: scrollSlide 2s ease-in-out 2s infinite;
+    }
+
+    /* ─── SECTION HEADER ───────────────────────────────────────── */
+    .section-label {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 16px;
+    }
+
+    .section-heading {
+      font-family: var(--display);
+      font-weight: 900;
+      font-size: clamp(48px, 7vw, 100px);
+      line-height: 0.9;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: var(--fg);
+    }
+
+    .section-divider {
+      width: 48px; height: 2px;
+      background: var(--red);
+      margin: 28px 0;
+    }
+
+    /* ─── ABOUT ────────────────────────────────────────────────── */
+    #about {
+      padding: 120px 48px 120px 64px;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 80px;
+      align-items: center;
+      max-width: 900px;
+    }
+
+    .about-text {
+      font-family: var(--mono);
+      font-weight: 200;
+      font-size: 14px;
+      line-height: 1.9;
+      color: rgba(237,236,236,0.7);
+    }
+
+    .about-text .hl {
+      background: var(--red);
+      color: var(--bg);
+      font-weight: 700;
+      padding: 0 4px;
+    }
+
+    .about-text .hl-inline {
+      color: var(--red);
+      font-weight: 300;
+    }
+
+    /* ─── WORKS ────────────────────────────────────────────────── */
+    #works {
+      padding: 120px 48px 120px 64px;
+      background: var(--bg2);
+    }
+
+    .works-header {
+      margin-bottom: 64px;
+    }
+
+    .works-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
+      gap: 3px;
+      max-width: 1400px;
+    }
+
+    .work-card {
+      position: relative;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      cursor: none;
+      background: #111;
+    }
+
+    .work-card-thumb {
+      width: 100%; height: 100%;
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.6s ease, filter 0.4s ease;
+      filter: grayscale(40%) brightness(0.7);
+    }
+
+    .work-card:hover .work-card-thumb {
+      transform: scale(1.06);
+      filter: grayscale(0%) brightness(0.9);
+    }
+
+    .work-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(6,6,6,0.9) 0%, transparent 60%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
       padding: 20px;
-      overflow-y: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .vertical-gallery::-webkit-scrollbar {
-      display: none;
-    }
-    /* Fade-in & out logic */
-    .work-item {
       opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.4s ease;
-      width: 100%;
-      text-align: center;
-      margin-bottom: 20px;
+      transition: opacity 0.3s ease;
     }
-    .work-item.appear {
+
+    .work-card:hover .work-card-overlay { opacity: 1; }
+
+    .work-card-bar {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: var(--red);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    .work-card:hover .work-card-bar { transform: scaleX(1); }
+
+    .work-card-title {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fg);
+    }
+
+    .work-card-num {
+      font-family: var(--display);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--red);
+      margin-bottom: 4px;
+    }
+
+    .work-card.placeholder .work-card-thumb {
+      background: #0e0e0e;
+    }
+    .work-card.placeholder::after {
+      content: '+';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--display);
+      font-size: 32px;
+      color: rgba(237,236,236,0.05);
+    }
+
+    /* ─── CONTACT ──────────────────────────────────────────────── */
+    #contact {
+      padding: 120px 48px 120px 64px;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 48px;
+      max-width: 1000px;
+      align-items: start;
+    }
+
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(237,236,236,0.4);
+    }
+
+    .form-group input,
+    .form-group textarea {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(237,236,236,0.15);
+      color: var(--fg);
+      font-family: var(--mono);
+      font-weight: 200;
+      font-size: 14px;
+      padding: 12px 0;
+      outline: none;
+      transition: border-color 0.25s;
+      resize: none;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: var(--red);
+    }
+
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+
+    .contact-links-btn {
+      font-family: var(--display);
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--red);
+      text-decoration: none;
+      cursor: none;
+      transition: color 0.25s ease, text-shadow 0.25s ease;
+      display: inline-block;
+    }
+
+    .contact-links-btn:hover {
+      color: var(--fg);
+      text-shadow: 0 0 20px rgba(237,236,236,0.4);
+    }
+
+    /* ─── FOOTER ───────────────────────────────────────────────── */
+    footer {
+      padding: 40px 48px 40px 64px;
+      border-top: 1px solid rgba(237,236,236,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      font-family: var(--display);
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2em;
+      color: var(--red);
+      text-transform: uppercase;
+    }
+
+    .footer-right {
+      font-family: var(--mono);
+      font-weight: 200;
+      font-size: 11px;
+      color: rgba(237,236,236,0.2);
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── MODAL / OVERLAY ──────────────────────────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      display: none;
+      z-index: 8000;
+      overflow-y: auto;
+    }
+    .overlay.open { display: block; }
+
+    .overlay-inner {
+      max-width: 1000px;
+      margin: 80px auto;
+      padding: 0 24px 80px;
+    }
+
+    .overlay-close {
+      position: fixed;
+      top: 24px; right: 40px;
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(237,236,236,0.5);
+      cursor: none;
+      z-index: 8001;
+      transition: color 0.2s;
+    }
+    .overlay-close:hover { color: var(--red); }
+
+    .overlay-video {
+      position: relative;
+      padding-top: 56.25%;
+      background: #000;
+      margin-bottom: 32px;
+    }
+    .overlay-video iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+    }
+
+    .overlay-desc {
+      font-family: var(--mono);
+      font-weight: 200;
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(237,236,236,0.6);
+    }
+
+    .overlay-desc .hl {
+      background: var(--red);
+      color: var(--bg);
+      font-weight: 700;
+      padding: 0 4px;
+    }
+
+    /* ─── ANIMATIONS ───────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes scrollSlide {
+      0%   { left: -100%; }
+      50%  { left: 100%; }
+      100% { left: 100%; }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
       opacity: 1;
       transform: none;
     }
-    .work-title {
-      margin-bottom: 10px;
-      font-size: 14px;
-      opacity: 0.8;
-      position: relative;
+
+    /* ─── MOBILE ───────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      nav { padding: 20px 24px; justify-content: flex-end; }
+
+      .hero-content { padding: 0 24px; }
+      .hero-rule { left: 24px; }
+      .scroll-hint { left: 24px; }
+      .hero-title { font-size: clamp(56px, 14vw, 200px); white-space: normal; }
+
+      #about, #works, #contact { padding: 80px 24px; }
+
+      .works-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .contact-grid { grid-template-columns: 1fr; gap: 48px; }
+
+      footer { flex-direction: column; gap: 12px; padding: 32px 24px; text-align: center; }
     }
-    .gallery-item {
-      width: 100%;
-      position: relative;
-      padding-top: 56.25%;
-      background-position: center center;
-      background-size: cover;
-      margin: 0 auto;
-      filter: none;
+
+    @media (max-width: 480px) {
+      .works-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
     }
-    /* OVERLAY / MODAL */
-    .overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      overflow-y: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      z-index: 1000;
-    }
-    .overlay::-webkit-scrollbar {
-      display: none;
-    }
-    .overlay-content {
-      position: relative;
-      margin: 60px auto;
-      width: 90%;
-      max-width: 1200px;
-      background: #000;
-      color: #fff;
-      padding: 20px;
-    }
-    .overlay-gallery {
-      margin-bottom: 20px;
-    }
-    .overlay-gallery iframe,
-    .overlay-gallery img,
-    .overlay-gallery video {
-      width: 100%;
-      height: auto;
-      display: block;
-      margin-bottom: 20px;
-    }
-    .overlay-description {
-      /* the description can be as tall as needed */
-    }
-    .overlay-close {
-      position: fixed;
-      top: 20px;
-      right: 40px;
-      font-size: 30px;
-      color: #fff;
-      cursor: pointer;
-      z-index: 1001;
-    }
-    .landing-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: left;
-      height: 100%;
-      padding: 20px;
-    }
-    .landing-content p {
-      margin: 20px 0;
-      font-size: 1.1em;
-      max-width: 200px;
-    }
-    .highlight {
-      background-color: #e40404;
-      color: #060606;
-      font-weight: 1000;
-      padding: 0 5px;
-    }
-    /* About section styles */
-    .about-content {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      line-height: 1.6;
-    }
-    /* CONTACT FORM */
-    .contact-form-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 60px auto;
-      border: none;
-      background: none;
-      color: #fff;
-    }
-    .contact-form-container label {
-      margin-top: 10px;
-    }
-    .contact-form-container input,
-    .contact-form-container textarea {
-      border: 1px solid #fff;
-      background: #000;
-      color: #fff;
-      border-radius: 0;
-      width: 100%;
-      margin-top: 8px;
-      padding: 8px;
-    }
-    .contact-form-container button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      border: 1px solid #fff;
-      background: #000;
-      color: #fff;
-      border-radius: 0;
-      cursor: pointer;
-    }
-    .contact-form-container button:hover {
-      background: #fff;
-      color: #000;
-    }
-    /* BOTTOM CENTER LINK */
-    .bottom-center-link {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #000;
-      text-decoration: none;
-      font-weight: 200;
-      font-size: 14px;
-    }
-    .bottom-center-link a {
-      text-decoration: none;
-      color: #000;
-    }
-    /* XENOLITH scramble */
-    .dud {
-      opacity: 0.5;
-    }
-    /* MOBILE MENU BUTTON & OVERLAY */
-    .mobile-menu-btn {
-      display: none;
-      position: absolute;
-      top: 15px; right: 15px;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      background: #e40404;
-      cursor: pointer;
-      z-index: 2000;
-    }
-    .mobile-menu-btn:before,
-    .mobile-menu-btn:after {
-      content: '';
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 10px; height: 2px;
-      background: #fff;
-    }
-    .mobile-menu-btn:after {
-      transform: translate(-50%, -50%) rotate(90deg);
-    }
-    .mobile-menu-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: #030303;
-      color: #fff;
-      z-index: 3000;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-    }
-    .mobile-menu-overlay.active {
-      display: flex;
-    }
-    .mobile-menu-overlay h2 {
-      color: #e40404;
-      margin-bottom: 20px;
-    }
-    .mobile-menu-items {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 20px;
-      font-size: 24px;
-      position: relative;
-    }
-    .mobile-menu-item {
-      position: relative;
-      padding-left: 25px;
-    }
-    .mobile-menu-item::before {
-      content: '>';
-      position: absolute;
-      left: 0;
-      color: #efefef;
-    }
-    .mobile-menu-close {
-      position: absolute;
-      top: 20px; right: 20px;
-      font-size: 28px;
-      cursor: pointer;
-    }
-    /* MEDIA QUERIES FOR MOBILE */
-    @media (max-width: 768px) {
-      .sidebar {
-        display: none;
-      }
-      .mobile-menu-btn {
-        display: block;
-      }
-      .vertical-gallery {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      }
-      /* Move close button lower on mobile */
-      .overlay-close {
-        top: 60px;
-        right: 20px;
-      }
-    }
-    /* "Center" the About section text */
-    .about-centered-text {
-      text-align: center;
-    }
-    /* Responsive video container for YouTube embeds */
-    .video-container {
-      position: relative;
-      padding-bottom: 56.25%; /* 16:9 ratio */
-      height: 0;
-      overflow: hidden;
-      width: 100%;
-    }
-    .video-container iframe {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-    }
+
+    .dud { opacity: 0.3; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- DESKTOP SIDEBAR (hidden on mobile) -->
-    <div class="sidebar">
-      <div class="header">
-        <h1>XENOLITH</h1>
-      </div>
-      <div class="categories">
-        <div class="category">
-          <div class="category-title">About</div>
-        </div>
-        <div class="category">
-          <div class="category-title">Works</div>
-        </div>
-        <div class="category">
-          <div class="category-title">Contact</div>
-        </div>
-      </div>
-    </div>
-    <!-- MAIN CONTENT -->
-    <div class="content">
-      <div class="text-content">
-        <p></p>
-      </div>
-    </div>
-    <!-- BOTTOM CENTER LINK -->
-    <div class="bottom-center-link">
-      <a href="https://linktr.ee/xen0lit4" target="_blank"><span style="background-color: #e40404; color: #060606; font-weight: 1000;">Socials</span></Socials></a>
-    </div>
-  </div><!-- end .container -->
-  <!-- Mobile Menu Button -->
-  <div class="mobile-menu-btn" id="mobileMenuBtn"></div>
-  <!-- Mobile Menu Overlay -->
-  <div class="mobile-menu-overlay" id="mobileMenuOverlay">
-    <div class="mobile-menu-close" id="mobileMenuClose">&times;</div>
-    <h2>XENOLITH</h2>
-    <div class="mobile-menu-items">
-      <div class="mobile-menu-item" data-cat="About">About</div>
-      <div class="mobile-menu-item" data-cat="Works">Works</div>
-      <div class="mobile-menu-item" data-cat="Contact">Contact</div>
-    </div>
+
+  <!-- INTRO SCREEN -->
+  <div id="intro-screen">
+    <div id="intro-bloom"></div>
+    <div id="intro-text">########</div>
+    <div class="intro-bar" id="intro-bar"></div>
   </div>
-  <!-- OVERLAY (Modal) for Works / Media -->
+
+  <!-- CURSOR -->
+  <div class="cursor" id="cursor"></div>
+
+  <!-- NAV -->
+  <nav>
+    <ul class="nav-links">
+      <li><span data-section="about">About</span></li>
+      <li><span data-section="works">Works</span></li>
+      <li><span data-section="contact">Contact</span></li>
+      <!--<li><a href="https://linktr.ee/xen0lit4" target="_blank" style="color:var(--red);opacity:1;">Socials</a></li>-->
+    </ul>
+  </nav>
+
+  <!-- ── HERO ─────────────────────────────────────────────────── -->
+  <section class="section" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-rule"></div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">Multidisciplinary Collective</div>
+      <h1 class="hero-title">
+        <span class="line-red">XENO</span>LITH
+      </h1>
+      <p class="hero-sub">
+        <strong>ENTER THE HUSH.</strong>
+      </p>
+      <div class="hero-cta">
+        <span class="btn btn-primary" data-section="works">Our Works</span>
+        <span class="btn btn-ghost" data-section="about">About</span>
+      </div>
+    </div>
+
+    <div class="scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ── ABOUT ─────────────────────────────────────────────────── -->
+  <section class="section" id="about">
+    <div class="about-grid reveal">
+      <div>
+        <div class="section-label">Who We Are</div>
+        <h2 class="section-heading">A NETWORK</h2>
+        <div class="section-divider"></div>
+        <p class="about-text">
+          <span class="hl-inline">Xenolith</span> is an artist collective focused on the intersection of
+          <span class="hl">MUSIC</span>, <span class="hl">ART</span>, and <span class="hl">EXPERIENCE</span>.
+          <br><br>
+          We exist in the margins, guided by low pulses and the promise of what's just out of reach.
+          Our work is driven by a singular vision—raw and uncompromising—focused on ideas, labor, and trust,
+          not money or ego. <span class="hl">WE CREATE BECAUSE WE MUST</span>, never distracted by the surface.
+          <br><br>
+          We are not a <span class="hl">COLLECTIVE</span>, a <span class="hl">LABEL</span>,
+          or a <span class="hl">STUDIO</span>, though we encompass elements of all.
+          What we are is a <span class="hl">NETWORK</span>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WORKS ─────────────────────────────────────────────────── -->
+  <section class="section" id="works" style="justify-content:flex-start;">
+    <div style="padding:120px 48px 0 64px;" class="works-header reveal">
+      <div class="section-label">Selected Projects</div>
+      <h2 class="section-heading">WORKS</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="works-grid" id="worksGrid" style="margin: 0 48px 80px 64px;"></div>
+  </section>
+
+  <!-- ── CONTACT ────────────────────────────────────────────────── -->
+  <section class="section" id="contact">
+    <div class="contact-grid reveal">
+      <div>
+        <div class="section-label">Get In Touch</div>
+        <h2 class="section-heading">CONTACT</h2>
+        <div class="section-divider"></div>
+        <form class="contact-form" action="mailto:contact@xenolith.eu" method="post" enctype="text/plain">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="cursor:none;border:none;text-align:left;">Send Message</button>
+        </form>
+      </div>
+      <div class="contact-info">
+        <a href="xenolith.eu/qr" target="_blank" class="contact-links-btn">LINKS</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">XENOLITH</div>
+    <div class="footer-right">© 2025 XENOLITH — ALL RIGHTS RESERVED</div>
+  </footer>
+
+  <!-- MODAL OVERLAY -->
   <div class="overlay" id="overlay">
-    <div class="overlay-close" id="overlay-close">&times;</div>
-    <div class="overlay-content">
-      <div class="overlay-gallery" id="overlay-gallery"></div>
-      <div class="overlay-description" id="overlay-description"></div>
+    <div class="overlay-close" id="overlayClose">[ CLOSE ]</div>
+    <div class="overlay-inner">
+      <div class="overlay-video" id="overlayVideo"></div>
+      <div class="overlay-desc" id="overlayDesc"></div>
     </div>
   </div>
+
   <script>
-    // WORKS data
+    // ── INTRO SCRAMBLE ─────────────────────────────────────────────
+    const introEl   = document.getElementById('intro-text');
+    const introBloom = document.getElementById('intro-bloom');
+    const introBar  = document.getElementById('intro-bar');
+    const introScreen = document.getElementById('intro-screen');
+    const TARGET = 'XENOLITH';
+    const CHARS  = '#@$%!&*^?~<>|/\\+-=';
+
+    const DURATION = 3200; // ms total
+    let startTime = null;
+
+    // Lerp a hex color between two values by t (0..1)
+    function lerpColor(r1,g1,b1, r2,g2,b2, t) {
+      return [
+        Math.round(r1 + (r2-r1)*t),
+        Math.round(g1 + (g2-g1)*t),
+        Math.round(b1 + (b2-b1)*t)
+      ];
+    }
+
+    // start = red (228,4,4), end = white (237,236,236)
+    const CR = [228,4,4], CW = [237,236,236];
+
+    function scrambleTick(now) {
+      if (!startTime) startTime = now;
+      const elapsed = now - startTime;
+      const t = Math.min(elapsed / DURATION, 1); // 0..1
+
+      // color interpolation
+      const [r,g,b] = lerpColor(CR[0],CR[1],CR[2], CW[0],CW[1],CW[2], t);
+      const col = `rgb(${r},${g},${b})`;
+      const colDim = `rgba(${r},${g},${b},0.22)`;
+
+      // bloom: disabled
+      // text shadow bloom feedback
+      const shadowSpread = Math.round(4 + (1-t)*18);
+      const shadowOpacity = (0.9 - t * 0.5).toFixed(2);
+      introEl.style.textShadow = `0 0 ${shadowSpread}px rgba(${r},${g},${b},${shadowOpacity}), 0 0 ${shadowSpread*3}px rgba(${r},${g},${b},${(shadowOpacity*0.4).toFixed(2)})`;
+      introEl.style.color = col;
+
+      // progress bar color
+      introBar.style.width = (t * 100) + '%';
+      introBar.style.background = `linear-gradient(to right, transparent, ${col}, transparent)`;
+      introBar.style.boxShadow = `0 0 8px rgba(${r},${g},${b},0.6)`;
+
+      // per-character resolve: char i locks in at t = i/(LENGTH-1) * 0.85
+      let html = '';
+      for (let i = 0; i < TARGET.length; i++) {
+        const lockAt = (i / (TARGET.length - 1)) * 0.85;
+        if (t >= lockAt + 0.12) {
+          // settled
+          html += `<span style="color:${col}">${TARGET[i]}</span>`;
+        } else if (t >= lockAt) {
+          // resolving — flicker
+          const flickerChance = (t - lockAt) / 0.12;
+          const ch = Math.random() < flickerChance
+            ? TARGET[i]
+            : CHARS[Math.floor(Math.random() * CHARS.length)];
+          html += `<span style="color:${col}">${ch}</span>`;
+        } else {
+          // scrambling
+          const ch = CHARS[Math.floor(Math.random() * CHARS.length)];
+          html += `<span style="color:${colDim}">${ch}</span>`;
+        }
+      }
+      introEl.innerHTML = html;
+
+      if (t < 1) {
+        requestAnimationFrame(scrambleTick);
+      } else {
+        // Final settled state
+        introEl.innerHTML = TARGET;
+        introEl.style.color = `rgb(${CW[0]},${CW[1]},${CW[2]})`;
+        introEl.style.textShadow = `0 0 6px rgba(237,236,236,0.3)`;
+        introBar.style.width = '100%';
+
+        setTimeout(() => {
+          introScreen.classList.add('hidden');
+          setTimeout(() => { introScreen.style.display = 'none'; }, 950);
+        }, 420);
+      }
+    }
+
+    requestAnimationFrame(scrambleTick);
+
+    // ── WORKS DATA ─────────────────────────────────────────────────
     const worksData = [
       {
         title: 'Red Dreams',
         thumbnail: '_assets/reddreams.jpg',
         youtube: 'https://www.youtube.com/embed/CcBfQrdjxkk',
-        description: `<p>
-          <p> We created the music and sound design for "<span style="background-color: #e40404; color: #060606; font-weight: 1000;">Red Dreams</span>".
-          <br><br> Each tone is <span style="background-color: #e40404; color: #060606; font-weight: 1000;">raw</span>, <span style="background-color: #e40404; color: #060606; font-weight: 1000;">vague</span> and <span style="background-color: #e40404; color: #060606; font-weight: 1000;">enigmatic</span>.
-          <br><br> The result is an experimental soundscape, simple yet open to endless interpretation. 
-          </p>`
+        description: `We created the music and sound design for "<span class="hl">Red Dreams</span>".
+          Each tone is <span class="hl">raw</span>, <span class="hl">vague</span> and <span class="hl">enigmatic</span>.
+          The result is an experimental soundscape, simple yet open to endless interpretation.`
       },
       {
         title: 'The Last Of Us',
         thumbnail: '_assets/TheLastOfUsPreview.png',
         youtube: 'https://www.youtube.com/embed/-JO-2nbI2G8',
-        description: `<p>
-          <p> This is the alternative soundtrack we made for the TV series <span style="background-color: #e40404; color: #060606; font-weight: 1000;">The Last of Us</span>.
-          <br><br> The raw sound of the guitar and voice capture the atmosphere, recorded as if echoing a real-life moment from the series.
-          <br><br> <span style="background-color: #e40404; color: #060606; font-weight: 1000;">The song was recorded in an abandoned house in Toronto, Ontario</span>.
-          </p>`
-      },
-      {
-        title: '...',
-        thumbnail: '_assets/Photography_M_RedGhost.jpg',
-        youtube: 'https://www.youtube.com/embed/jfjLi9HzPyQ',
-        description: '<p>...</p>'
-      },
-      {
-        title: '...',
-        thumbnail: '_assets/Photography_M_RedGhost.jpg',
-        youtube: 'https://www.youtube.com/embed/jfjLi9HzPyQ',
-        description: '<p>...</p>'
-      },
-      {
-        title: '...',
-        thumbnail: '_assets/Photography_M_RedGhost.jpg',
-        youtube: 'https://www.youtube.com/embed/jfjLi9HzPyQ',
-        description: '<p>...</p>'
-      },
-      {
-        title: '...',
-        thumbnail: '_assets/Photography_M_RedGhost.jpg',
-        youtube: '',
-        description: '<p></p>'
-      },
-      {
-        title: '...',
-        thumbnail: '_assets/Photography_M_RedGhost.jpg',
-        youtube: 'https://www.youtube.com/embed/jfjLi9HzPyQ',
-        description: '<p>...</p>'
-      },
-      {
-        title: '...',
-        thumbnail: '_assets/Photography_M_RedGhost.jpg',
-        youtube: 'https://www.youtube.com/embed/jfjLi9HzPyQ',
-        description: '<p>...</p>'
+        description: `This is the alternative soundtrack we made for the TV series <span class="hl">The Last of Us</span>.
+          The raw sound of the guitar and voice capture the atmosphere, recorded as if echoing a real-life moment from the series.
+          <span class="hl">The song was recorded in an abandoned house in Toronto, Ontario</span>.`
       }
     ];
 
-    // Contact form HTML with mailto action
-    const contactFormHTML = `
-      <div class="contact-form-container">
-        <form id="contact-form" action="mailto:contact@xenolith.eu" method="post" enctype="text/plain">
-          <label for="contact-name">Name</label>
-          <input type="text" id="contact-name" name="name" required />
-          <label for="contact-email">Email</label>
-          <input type="email" id="contact-email" name="email" required />
-          <label for="contact-message">Message</label>
-          <textarea id="contact-message" name="message" rows="5" required></textarea>
-          <button type="submit">Send</button>
-        </form>
-      </div>
-    `;
+    // ── BUILD WORKS GRID ───────────────────────────────────────────
+    const grid = document.getElementById('worksGrid');
+    worksData.forEach((work, i) => {
+      const card = document.createElement('div');
+      card.className = 'work-card reveal';
+      card.style.transitionDelay = `${(i % 3) * 0.08}s`;
 
-    // About section HTML
-    const aboutHTML = `
-      <div class="landing-content">
-        <div style="margin-top: 0px;">
-          <span style="color: #e40404; font-weight: 1000;">Xenolith</span> is an artist collective focused on the intersection of <span style="background-color: #e40404; color: #060606; font-weight: 1000;">MUSIC</span>, <span style="background-color: #e40404; color: #060606; font-weight: 1000;">ART</span>, and <span style="background-color: #e40404; color: #060606; font-weight: 1000;">EXPERIENCE</span>.
-          We exist in the margins, guided by low pulses and the promise of what’s just out of reach. Our work is driven by a singular vision—raw and uncompromising—focused on ideas, labor, and trust, not money or ego. <span style="background-color: #e40404; color: #060606; font-weight: 1000;">WE CREATE BECAUSE WE MUST</span>, never distracted by the surface.
-          We are not a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>, a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>, or a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>, though we encompass elements of all. What we are is a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWORK</span>.
+      const isPlaceholder = work.title === '...' && !work.youtube;
+      if (isPlaceholder) card.classList.add('placeholder');
+
+      card.innerHTML = `
+        <div class="work-card-bar"></div>
+        <div class="work-card-thumb" style="background-image:url('${work.thumbnail}')"></div>
+        <div class="work-card-overlay">
+          <div class="work-card-num">0${i + 1}</div>
+          <div class="work-card-title">${work.title}</div>
         </div>
-      </div>
-    `;
-    // Landing section HTML
-    const landingHTML = `
-      <div style="margin-top: 20px;">
-        <h2></h2><br /><br />
-        <p><strong><span style="background-color: #e40404; color: #060606; font-weight: 1000;">
-          ENTER THE HUSH.
-        </span></strong></p><br /><br />
-        <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">COLLECTIVE</span>,</strong> but that doesn’t quite capture it.</p>
-        <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">LABEL</span>,</strong> but that doesn’t quite capture it.</p>
-        <p><strong>Some say we’re a <span style="background-color: #e40404; color: #060606; font-weight: 1000;">STUDIO</span>,</strong> but that only scratches the surface.</p>
-        <p>What we are, truly, depends on who’s asking. We’re a
-           <span style="background-color: #e40404; color: #060606; font-weight: 1000;">NETWORK</span>.
-        </p><br /><br />
-    `;
-    // contentData object
-    const contentData = {
-      'Landing': landingHTML,
-      'About': aboutHTML,
-      'Works': { gallery: worksData },
-      'Contact': contactFormHTML
-    };
-    // Desktop category events
-    document.querySelectorAll('.category-title').forEach(cat => {
-      cat.addEventListener('click', () => {
-        displayContent(cat.textContent.trim());
-      });
-    });
-    // MOBILE MENU
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
-    const mobileMenuClose = document.getElementById('mobileMenuClose');
-    const mobileMenuItems = document.querySelectorAll('.mobile-menu-item');
-    mobileMenuBtn.addEventListener('click', () => {
-      mobileMenuOverlay.classList.add('active');
-    });
-    mobileMenuClose.addEventListener('click', () => {
-      mobileMenuOverlay.classList.remove('active');
-    });
-    mobileMenuItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const catName = item.getAttribute('data-cat');
-        mobileMenuOverlay.classList.remove('active');
-        displayContent(catName);
-      });
-    });
-    // Show content function
-    function displayContent(categoryName) {
-      const textContent = document.querySelector('.text-content');
-      removeGallery();
-      if (contentData[categoryName]) {
-        const data = contentData[categoryName];
-        if (typeof data === 'object' && data.gallery) {
-          textContent.innerHTML = '';
-          createWorksGallery(data.gallery);
-        } else {
-          textContent.innerHTML = data;
-        }
+      `;
+
+      if (work.youtube) {
+        card.addEventListener('click', () => openOverlay(work.youtube, work.description));
       }
-    }
-    // Remove gallery if exists
-    function removeGallery() {
-      const contentArea = document.querySelector('.content');
-      contentArea.classList.remove('has-gallery');
-      const existing = document.querySelector('.vertical-gallery');
-      if (existing) existing.remove();
-    }
-    // Build works gallery
-    function createWorksGallery(items) {
-      const contentArea = document.querySelector('.content');
-      contentArea.classList.add('has-gallery');
-      const gallery = document.createElement('div');
-      gallery.classList.add('vertical-gallery');
-      items.forEach((item, i) => {
-        const workItem = document.createElement('div');
-        workItem.classList.add('work-item');
-        const titleEl = document.createElement('div');
-        titleEl.classList.add('work-title');
-        // For the first two items, wrap the title in the styled span
-        if (i < 2) {
-          titleEl.innerHTML = `<span style="background-color: #e40404; color: #060606; font-weight: 1000;">${item.title || `Work #${i+1}`}</span>`;
-        } else {
-          titleEl.textContent = item.title || `Work #${i+1}`;
-        }
-        const box = document.createElement('div');
-        box.classList.add('gallery-item');
-        if (item.thumbnail) {
-          box.style.backgroundImage = `url('${item.thumbnail}')`;
-        }
-        box.addEventListener('click', () => {
-          openYouTubeOverlay(item.youtube, item.description);
-        });
-        workItem.appendChild(titleEl);
-        workItem.appendChild(box);
-        gallery.appendChild(workItem);
-      });
-      contentArea.appendChild(gallery);
-      setupFadeInOut();
-    }
-    // Setup fade in/out using IntersectionObserver
-    function setupFadeInOut() {
-      const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('appear');
-          } else {
-            entry.target.classList.remove('appear');
-          }
-        });
-      }, { threshold: 0.1 });
-      document.querySelectorAll('.work-item').forEach(item => {
-        observer.observe(item);
-      });
-    }
-    // Open YouTube overlay with responsive video and description
-    function openYouTubeOverlay(youtubeLink, descHTML) {
-      const overlay = document.getElementById('overlay');
-      const overlayGallery = document.getElementById('overlay-gallery');
-      const overlayDescription = document.getElementById('overlay-description');
-      overlayGallery.innerHTML = '';
-      overlayDescription.innerHTML = '';
-      const videoContainer = document.createElement('div');
-      videoContainer.classList.add('video-container');
-      const iframe = document.createElement('iframe');
-      iframe.src = `${youtubeLink}?autoplay=1`;
-      iframe.frameBorder = '0';
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-      iframe.allowFullscreen = true;
-      videoContainer.appendChild(iframe);
-      overlayGallery.appendChild(videoContainer);
-      if (descHTML) {
-        overlayDescription.innerHTML = descHTML;
-      }
-      overlay.style.display = 'block';
-    }
-    // Close overlay function
-    const overlayClose = document.getElementById('overlay-close');
-    overlayClose.addEventListener('click', closeOverlay);
+
+      grid.appendChild(card);
+    });
+
+    // ── MODAL ──────────────────────────────────────────────────────
     const overlay = document.getElementById('overlay');
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        closeOverlay();
-      }
-    });
+    const overlayVideo = document.getElementById('overlayVideo');
+    const overlayDesc = document.getElementById('overlayDesc');
+    const overlayClose = document.getElementById('overlayClose');
+
+    function openOverlay(yt, desc) {
+      overlayVideo.innerHTML = `<iframe src="${yt}?autoplay=1" frameborder="0"
+        allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
+        allowfullscreen></iframe>`;
+      overlayDesc.innerHTML = `<p>${desc}</p>`;
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
     function closeOverlay() {
-      overlay.style.display = 'none';
-      overlay.querySelectorAll('iframe').forEach(ifr => { ifr.src = ''; });
-      overlay.querySelectorAll('video').forEach(vid => {
-        vid.pause();
-        vid.currentTime = 0;
-      });
+      overlay.classList.remove('open');
+      overlayVideo.innerHTML = '';
+      document.body.style.overflow = '';
     }
-    // TEXT SCRAMBLE Class
-    class TextScramble {
-      constructor(el) {
-        this.el = el;
-        this.chars = '#';
-        this.update = this.update.bind(this);
-      }
-      setText(newText) {
-        const oldText = this.el.innerText;
-        const length = Math.max(oldText.length, newText.length);
-        const promise = new Promise((resolve) => (this.resolve = resolve));
-        this.queue = [];
-        for (let i = 0; i < length; i++) {
-          const from = oldText[i] || '';
-          const to = newText[i] || '';
-          const start = Math.floor(Math.random() * 100);
-          const end = start + Math.floor(Math.random() * 100);
-          this.queue.push({ from, to, start, end });
-        }
-        cancelAnimationFrame(this.frameRequest);
-        this.frame = 0;
-        this.update();
-        return promise;
-      }
-      update() {
-        let output = '';
-        let complete = 0;
-        for (let i = 0, n = this.queue.length; i < n; i++) {
-          let { from, to, start, end, char } = this.queue[i];
-          if (this.frame >= end) {
-            complete++;
-            output += to;
-          } else if (this.frame >= start) {
-            if (!char || Math.random() < 0.28) {
-              char = this.randomChar();
-              this.queue[i].char = char;
-            }
-            output += `<span class="dud">${char}</span>`;
-          } else {
-            output += from;
-          }
-        }
-        this.el.innerHTML = output;
-        if (complete === this.queue.length) {
-          this.resolve();
-        } else {
-          this.frameRequest = requestAnimationFrame(this.update);
-          this.frame++;
-        }
-      }
-      randomChar() {
-        return this.chars[Math.floor(Math.random() * this.chars.length)];
-      }
-    }
-    // On DOM load: animate header and load Landing content
-    document.addEventListener('DOMContentLoaded', () => {
-      const headerEl = document.querySelector('.header h1');
-      const fx = new TextScramble(headerEl);
-      function animateTitle() {
-        fx.setText('XENOLITH').then(() => {
-          setTimeout(animateTitle, 1000);
-        });
-      }
-      animateTitle();
-      displayContent('Landing');
+
+    overlayClose.addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(); });
+
+    // ── CUSTOM CURSOR ──────────────────────────────────────────────
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top  = e.clientY + 'px';
     });
+    document.querySelectorAll('a, span[data-section], .work-card, button, .overlay-close, .about-tag, .contact-links-btn').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('expand'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('expand'));
+    });
+
+    // ── SMOOTH SCROLL / SECTION NAV ───────────────────────────────
+    document.querySelectorAll('[data-section]').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-section');
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // ── SCROLL REVEAL ──────────────────────────────────────────────
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
   </script>
 </body>
 </html>
