@@ -18,18 +18,36 @@
       --display: 'Barlow Condensed', sans-serif;
       --mono:    'Roboto Mono', monospace;
       --pad-x:   48px;
+
+      /* ── Viewport height: uses dvh (dynamic) so iOS Safari bottom bar is
+            always factored in. Falls back to svh, then 100vh for older browsers. */
+      --vh100: 100dvh;
     }
+
+    /* For browsers that don't support dvh, fall back gracefully */
+    @supports not (height: 100dvh) {
+      :root { --vh100: 100svh; }
+    }
+    @supports not (height: 100svh) {
+      :root { --vh100: 100vh; }
+    }
+
     html, body { height: 100%; overflow: hidden; background: #000; }
     body {
       color: var(--fg);
       font-family: var(--display);
       font-weight: 300;
       overflow-x: hidden;
-      cursor: none;
+      /* cursor:none only on non-touch (see media query below) */
+    }
+
+    /* ── Hide native cursor only on pointer-capable (non-touch) devices ── */
+    @media (pointer: fine) {
+      body { cursor: none; }
     }
 
     #scroll-root {
-      height: 100vh;
+      height: var(--vh100);
       overflow-y: scroll;
       overflow-x: hidden;
       scroll-snap-type: y mandatory;
@@ -111,6 +129,7 @@
       color: #000;
       background-color: var(--red);
       padding: 0 3px;
+      font-weight: 700;
       animation: blinkRedBg 1.1s step-start infinite;
     }
     @keyframes blinkRedBg {
@@ -126,16 +145,25 @@
       border-radius: 50%;
       pointer-events: none;
       z-index: 999999;
-      transition: transform 0.15s ease, opacity 0.2s ease;
+      transition: transform 0.15s ease, opacity 0.3s ease;
       transform: translate(-50%, -50%);
+      opacity: 1;
     }
     .cursor.expand { transform: translate(-50%, -50%) scale(2); opacity: 0.92; }
+    /* cursor hidden class – used when mouse leaves window or is idle */
+    .cursor.invisible { opacity: 0 !important; }
+
+    /* On touch-only devices, never show the custom cursor */
+    @media (pointer: coarse) {
+      .cursor { display: none !important; }
+    }
 
     /* ─── BACKGROUND VIDEO ────────────────────────────────────────── */
     #hero-video {
       position: fixed;
       top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      width: 100vw;
+      height: var(--vh100);
       object-fit: cover;
       object-position: center;
       z-index: 2;
@@ -148,6 +176,12 @@
       background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%);
       pointer-events: none;
     }
+
+    /* iOS video play-button overlay suppressor */
+    #hero-video::-webkit-media-controls { display: none !important; }
+    #hero-video::-webkit-media-controls-panel { display: none !important; }
+    #hero-video::-webkit-media-controls-play-button { display: none !important; }
+    #hero-video::-webkit-media-controls-start-playback-button { display: none !important; }
 
     #scroll-fade { display: none; }
 
@@ -182,7 +216,7 @@
 
     /* ─── HERO placeholder ────────────────────────────────────────── */
     #hero {
-      height: 100vh;
+      height: var(--vh100);
       scroll-snap-align: start;
       scroll-snap-stop: always;
       background: transparent;
@@ -212,9 +246,11 @@
       position: relative;
       aspect-ratio: 4/3;
       overflow: hidden;
-      cursor: none;
       background: #111;
     }
+    /* touch devices get default cursor on cards */
+    @media (pointer: fine) { .work-card { cursor: none; } }
+
     .work-card-thumb {
       width: 100%; height: 100%;
       background-size: cover;
@@ -254,7 +290,9 @@
 
     /* ─── CONTACT ─────────────────────────────────────────────────── */
     .works-contact {
-      padding: 72px 0;
+      /* Extra bottom padding on iOS so links clear the browser chrome.
+         env(safe-area-inset-bottom) is 0 on non-iOS, so this is harmless elsewhere. */
+      padding: 72px 0 calc(72px + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -269,10 +307,11 @@
       text-transform: lowercase;
       color: #fff;
       text-decoration: none;
-      cursor: none;
       transition: color 0.2s;
       text-shadow: 0 0 10px rgba(0,0,0,0.9);
     }
+    /* touch: restore default cursor on links */
+    @media (pointer: fine) { .qr-link { cursor: none; } }
     .qr-link:hover { color: var(--red); }
 
     /* ─── ANIMATIONS ─────────────────────────────────────────────── */
@@ -307,9 +346,9 @@
       font-size: 12px;
       letter-spacing: 0.2em;
       color: rgba(237,236,236,0.5);
-      cursor: none;
       transition: color 0.2s;
     }
+    @media (pointer: fine) { .overlay-close { cursor: none; } }
     .overlay-close:hover { color: var(--fg); }
     .overlay-inner { width: 90%; max-width: 900px; display: flex; flex-direction: column; gap: 24px; }
     .overlay-video iframe { width: 100%; aspect-ratio: 16/9; border: none; }
@@ -324,7 +363,7 @@
       color: #000;
       background-color: var(--red);
       padding: 0 3px;
-      font-weight: 400;
+      font-weight: 700;
       animation: blinkRedBg 1.1s step-start infinite;
     }
 
@@ -347,11 +386,24 @@
     </div>
   </div>
 
-  <!-- CURSOR -->
+  <!-- CURSOR (hidden on touch via CSS) -->
   <div class="cursor" id="cursor"></div>
 
-  <!-- BACKGROUND VIDEO z-index:2 -->
-  <video id="hero-video" autoplay muted loop playsinline>
+  <!-- BACKGROUND VIDEO
+       • autoplay muted playsinline are all required for iOS Safari autoplay
+       • webkit-playsinline for older iOS
+       • disablePictureInPicture / x-webkit-airplay suppress extra iOS UI -->
+  <video
+    id="hero-video"
+    autoplay
+    muted
+    loop
+    playsinline
+    webkit-playsinline
+    disablePictureInPicture
+    x-webkit-airplay="deny"
+    preload="auto"
+  >
     <source src="_assets/background.mp4" type="video/mp4">
   </video>
 
@@ -392,8 +444,8 @@
 
   <script>
     /* ─── AUDIO ──────────────────────────────────────────────────── */
-    const FADE_IN  = 0.6;  // seconds
-    const FADE_OUT = 0.8;  // seconds
+    const FADE_IN  = 0.6;
+    const FADE_OUT = 0.8;
 
     function makeAudio(src, loop = false) {
       const a = new Audio('_assets/' + src);
@@ -426,6 +478,35 @@
     const audioReveal   = makeAudio('reveal.mp3',  false);
     const audioContinue = makeAudio('continue.mp3', false);
     const audioMain     = makeAudio('main.mp3',     true);
+
+    /* ─── iOS VIDEO AUTOPLAY FALLBACK ────────────────────────────── */
+    // On iOS Safari the video sometimes needs a user-gesture nudge.
+    // We attempt to play immediately; if it fails we silently retry on
+    // the first touch interaction (which iOS permits).
+    const heroVideo = document.getElementById('hero-video');
+
+    function attemptVideoPlay() {
+      const p = heroVideo.play();
+      if (p !== undefined) {
+        p.catch(() => {
+          // Play was prevented – wait for a user interaction
+          const resume = () => {
+            heroVideo.play().catch(() => {});
+            document.removeEventListener('touchstart', resume, { once: true });
+            document.removeEventListener('click',      resume, { once: true });
+          };
+          document.addEventListener('touchstart', resume, { once: true, passive: true });
+          document.addEventListener('click',      resume, { once: true });
+        });
+      }
+    }
+
+    // Try right away, then also after the window loads (whichever is later)
+    if (heroVideo.readyState >= 2) {
+      attemptVideoPlay();
+    } else {
+      heroVideo.addEventListener('canplay', attemptVideoPlay, { once: true });
+    }
 
     /* ─── INTRO ─────────────────────────────────────────────────── */
     const introEl    = document.getElementById('intro-text');
@@ -476,7 +557,6 @@
     function showTagline(){
       slide1.style.transition='opacity 0.6s ease';
       slide1.style.opacity='0';
-      // cross-fade reveal → continue
       fadeOut(audioReveal, FADE_OUT, () => fadeIn(audioContinue));
       taglineEl.innerHTML =
         'xenolith is an artist collective focused on the intersection of&nbsp;' +
@@ -485,7 +565,6 @@
         ', and&nbsp;<span class="blink-red">experience</span>.';
       setTimeout(()=>{ slide2.classList.add('visible'); }, 400);
       setTimeout(()=>{
-        // cross-fade continue → main before intro disappears
         fadeOut(audioContinue, FADE_OUT, () => fadeIn(audioMain));
         introScreen.classList.add('hidden');
         setTimeout(()=>{ introScreen.style.display='none'; }, 950);
@@ -522,36 +601,66 @@
     overlay.addEventListener('click',e=>{ if(e.target===overlay) closeOverlay(); });
 
     /* ─── CURSOR ─────────────────────────────────────────────────── */
-    const cursor=document.getElementById('cursor');
-    document.addEventListener('mousemove',e=>{
-      cursor.style.left=e.clientX+'px';
-      cursor.style.top=e.clientY+'px';
-    });
-    document.querySelectorAll('a,.work-card,button,.overlay-close,.qr-link').forEach(el=>{
-      el.addEventListener('mouseenter',()=>cursor.classList.add('expand'));
-      el.addEventListener('mouseleave',()=>cursor.classList.remove('expand'));
-    });
+    const cursor = document.getElementById('cursor');
+
+    // Only wire up cursor logic on pointer-fine devices (non-touch)
+    if (window.matchMedia('(pointer: fine)').matches) {
+      let cursorIdleTimer = null;
+
+      const IDLE_MS = 1000; // hide cursor after 1 s of inactivity
+
+      function resetIdleTimer() {
+        cursor.classList.remove('invisible');
+        clearTimeout(cursorIdleTimer);
+        cursorIdleTimer = setTimeout(() => {
+          cursor.classList.add('invisible');
+        }, IDLE_MS);
+      }
+
+      document.addEventListener('mousemove', e => {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top  = e.clientY + 'px';
+        resetIdleTimer();
+      });
+
+      // Hide when pointer leaves the browser window
+      document.addEventListener('mouseleave', () => {
+        cursor.classList.add('invisible');
+        clearTimeout(cursorIdleTimer);
+      });
+      document.addEventListener('mouseenter', () => {
+        resetIdleTimer();
+      });
+
+      document.querySelectorAll('a,.work-card,button,.overlay-close,.qr-link').forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('expand'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('expand'));
+      });
+
+      // Start the idle timer immediately
+      resetIdleTimer();
+    }
 
     /* ─── SCROLL FADE + ARROW ────────────────────────────────────── */
-    const scrollRoot =document.getElementById('scroll-root');
-    const scrollFade =document.getElementById('scroll-fade');
-    const heroEl     =document.getElementById('hero');
-    const scrollArrow=document.getElementById('scroll-arrow');
+    const scrollRoot  = document.getElementById('scroll-root');
+    const scrollFade  = document.getElementById('scroll-fade');
+    const heroEl      = document.getElementById('hero');
+    const scrollArrow = document.getElementById('scroll-arrow');
 
-    scrollRoot.addEventListener('scroll',()=>{
-      const scrollY  =scrollRoot.scrollTop;
-      const heroH    =heroEl.offsetHeight;
-      const progress =Math.min(scrollY/heroH,1);
-      scrollFade.style.opacity=progress;
-      if(scrollY>40){ scrollArrow.classList.add('hidden'); }
-      else           { scrollArrow.classList.remove('hidden'); }
+    scrollRoot.addEventListener('scroll', () => {
+      const scrollY   = scrollRoot.scrollTop;
+      const heroH     = heroEl.offsetHeight;
+      const progress  = Math.min(scrollY / heroH, 1);
+      scrollFade.style.opacity = progress;
+      if (scrollY > 40) { scrollArrow.classList.add('hidden'); }
+      else              { scrollArrow.classList.remove('hidden'); }
     });
 
     /* ─── REVEAL ON SCROLL ───────────────────────────────────────── */
-    const revealObserver=new IntersectionObserver(entries=>{
-      entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
-    },{root:scrollRoot,threshold:0.08});
-    document.querySelectorAll('.reveal').forEach(el=>revealObserver.observe(el));
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { root: scrollRoot, threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
   </script>
 </body>
 </html>
