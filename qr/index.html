@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR</title>
+  <title>XENOLITH</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
   <style>
@@ -12,7 +12,6 @@
       padding: 0;
       box-sizing: border-box;
     }
-
     html, body {
       height: 100%;
       background: #000;
@@ -20,24 +19,20 @@
       font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
       overflow: hidden;
     }
-
     body {
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 40px 24px;
     }
-
     .links {
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 2px;
+      align-items: flex-end;
     }
-
     .link {
-      display: flex;
-      align-items: baseline;
-      gap: 18px;
+      display: block;
       text-decoration: none;
       color: #fff;
       text-transform: uppercase;
@@ -46,33 +41,18 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       transition: color 0.1s;
+      line-height: 1.1;
+      white-space: nowrap;
     }
-
-    .link:hover {
-      color: #ff0000;
-    }
-
-    .link:active {
-      opacity: 0.4;
-    }
-
-    .tag {
-      font-size: clamp(10px, 2.5vw, 12px);
-      letter-spacing: 0.2em;
-      color: #555;
-      transition: color 0.1s;
-    }
-
-    .link:hover .tag {
-      color: #7a0000;
-    }
+    .link:hover { color: #ff0000; }
+    .link:active { opacity: 0.4; }
   </style>
 </head>
 <body>
   <nav class="links">
-    <a class="link" href="https://xenolith.eu" target="_blank" rel="noopener">WEBSITE</a>
-    <a class="link" href="https://instagram.com/new__grid" target="_blank" rel="noopener"><span class="tag">VISUAL</span> INSTAGRAM</a>
-    <a class="link" href="https://on.soundcloud.com/mjbwWdBuUmh9HJKI8v" target="_blank" rel="noopener">SOUNDCLOUD <span class="tag">MUSIC</span></a>
+    <a class="link" id="l1" href="https://xenolith.eu" target="_blank" rel="noopener">WEBSITE</a>
+    <a class="link" id="l2" href="https://instagram.com/new__grid" target="_blank" rel="noopener">INSTAGRAM</a>
+    <a class="link" id="l3" href="https://soundcloud.com/xenolith" target="_blank" rel="noopener">SOUNDCLOUD</a>
   </nav>
 </body>
 </html>
