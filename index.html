@@ -18,356 +18,216 @@
       --display: 'Barlow Condensed', sans-serif;
       --mono:    'Roboto Mono', monospace;
       --pad-x:   48px;
-
-      /* ── Viewport height: uses dvh (dynamic) so iOS Safari bottom bar is
-            always factored in. Falls back to svh, then 100vh for older browsers. */
-      --vh100: 100dvh;
+      --vh100:   100dvh;
     }
-
-    /* For browsers that don't support dvh, fall back gracefully */
-    @supports not (height: 100dvh) {
-      :root { --vh100: 100svh; }
-    }
-    @supports not (height: 100svh) {
-      :root { --vh100: 100vh; }
-    }
+    @supports not (height: 100dvh) { :root { --vh100: 100svh; } }
+    @supports not (height: 100svh) { :root { --vh100: 100vh; } }
 
     html, body { height: 100%; overflow: hidden; background: #000; }
-    body {
-      color: var(--fg);
-      font-family: var(--display);
-      font-weight: 300;
-      overflow-x: hidden;
-      /* cursor:none only on non-touch (see media query below) */
-    }
-
-    /* ── Hide native cursor only on pointer-capable (non-touch) devices ── */
-    @media (pointer: fine) {
-      body { cursor: none; }
-    }
+    body { color: var(--fg); font-family: var(--display); font-weight: 300; overflow-x: hidden; }
+    @media (pointer: fine) { body { cursor: none; } }
 
     #scroll-root {
       height: var(--vh100);
-      overflow-y: scroll;
-      overflow-x: hidden;
+      overflow-y: scroll; overflow-x: hidden;
       scroll-snap-type: y mandatory;
       -webkit-overflow-scrolling: touch;
-      position: relative;
-      z-index: 3;
-      background: transparent;
+      position: relative; z-index: 3; background: transparent;
     }
     #scroll-root::-webkit-scrollbar { display: none; }
     #scroll-root { scrollbar-width: none; }
 
-    /* ─── INTRO SCREEN ────────────────────────────────────────────── */
+    /* ─── INTRO ── */
     #intro-screen {
-      position: fixed;
-      inset: 0;
-      background: #000;
+      position: fixed; inset: 0; background: #000;
       z-index: 99999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; overflow: hidden;
     }
     #intro-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
+      opacity: 0; pointer-events: none;
       transition: opacity 0.9s cubic-bezier(0.4,0,0.2,1);
     }
-
     #intro-slide-1 {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
     }
     #intro-text {
-      position: relative;
-      z-index: 2;
-      font-family: 'Roboto Mono', monospace;
-      font-weight: 300;
-      font-size: clamp(8px, 1.6vw, 22px);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      text-align: center;
-      line-height: 1;
+      position: relative; z-index: 2;
+      font-family: 'Roboto Mono', monospace; font-weight: 300;
+      font-size: clamp(8px, 1.6vw, 22px); letter-spacing: 0.15em;
+      text-transform: uppercase; text-align: center; line-height: 1;
     }
     .intro-bar {
-      position: absolute;
-      bottom: 0; left: 0;
-      height: 1px; width: 0%;
+      position: absolute; bottom: 0; left: 0; height: 1px; width: 0%;
       background: linear-gradient(to right, transparent, var(--red), transparent);
     }
-
     #intro-slide-2 {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.7s ease;
-      pointer-events: none;
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.7s ease; pointer-events: none;
     }
     #intro-slide-2.visible { opacity: 1; }
     #intro-tagline {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 300;
-      font-size: clamp(14px, 2vw, 26px);
-      letter-spacing: 0.18em;
-      text-transform: lowercase;
-      text-align: center;
-      color: rgba(237,236,236,0.75);
-      max-width: 600px;
-      line-height: 2;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 300;
+      font-size: clamp(14px, 2vw, 26px); letter-spacing: 0.18em;
+      text-transform: lowercase; text-align: center;
+      color: rgba(237,236,236,0.75); max-width: 600px; line-height: 2;
     }
     #intro-tagline .blink-red {
-      color: #000;
-      background-color: var(--red);
-      padding: 0 3px;
-      font-weight: 700;
+      color: #000; background-color: var(--red);
+      padding: 0 3px; font-weight: 700;
       animation: blinkRedBg 1.1s step-start infinite;
     }
     @keyframes blinkRedBg {
-      0%, 49% { background-color: var(--red); color: #000; }
-      50%, 100% { background-color: transparent; color: #000; }
+      0%,49%  { background-color: var(--red); color: #000; }
+      50%,100%{ background-color: transparent; color: #000; }
     }
 
-    /* ─── CURSOR ──────────────────────────────────────────────────── */
+    /* ─── CURSOR ── */
     .cursor {
-      position: fixed;
-      width: 7px; height: 7px;
-      background: #fff;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 999999;
+      position: fixed; width: 7px; height: 7px; background: #fff;
+      border-radius: 50%; pointer-events: none; z-index: 999999;
       transition: transform 0.15s ease, opacity 0.3s ease;
-      transform: translate(-50%, -50%);
-      opacity: 1;
+      transform: translate(-50%,-50%); opacity: 1;
     }
-    .cursor.expand { transform: translate(-50%, -50%) scale(2); opacity: 0.92; }
-    /* cursor hidden class – used when mouse leaves window or is idle */
-    .cursor.invisible { opacity: 0 !important; }
+    .cursor.expand   { transform: translate(-50%,-50%) scale(2); opacity: 0.92; }
+    .cursor.invisible{ opacity: 0 !important; }
+    @media (pointer: coarse) { .cursor { display: none !important; } }
 
-    /* On touch-only devices, never show the custom cursor */
-    @media (pointer: coarse) {
-      .cursor { display: none !important; }
-    }
-
-    /* ─── BACKGROUND VIDEO ────────────────────────────────────────── */
+    /* ─── VIDEO ── */
     #hero-video {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw;
-      height: var(--vh100);
-      object-fit: cover;
-      object-position: center;
-      z-index: 2;
-      pointer-events: none;
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: var(--vh100);
+      object-fit: cover; object-position: center;
+      z-index: 2; pointer-events: none;
     }
     .hero-vignette {
-      position: fixed;
-      inset: 0;
-      z-index: 4;
+      position: fixed; inset: 0; z-index: 4; pointer-events: none;
       background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%);
-      pointer-events: none;
     }
-
-    /* iOS video play-button overlay suppressor */
-    #hero-video::-webkit-media-controls { display: none !important; }
-    #hero-video::-webkit-media-controls-panel { display: none !important; }
-    #hero-video::-webkit-media-controls-play-button { display: none !important; }
+    #hero-video::-webkit-media-controls,
+    #hero-video::-webkit-media-controls-panel,
+    #hero-video::-webkit-media-controls-play-button,
     #hero-video::-webkit-media-controls-start-playback-button { display: none !important; }
-
     #scroll-fade { display: none; }
 
-    /* ─── SCROLL ARROW ────────────────────────────────────────────── */
+    /* ─── SCROLL ARROW ── */
     #scroll-arrow {
-      position: fixed;
-      bottom: 36px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      opacity: 1;
-      transition: opacity 0.4s ease;
-      pointer-events: none;
+      position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+      z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      opacity: 1; transition: opacity 0.4s ease; pointer-events: none;
     }
     #scroll-arrow.hidden { opacity: 0; }
     .arrow-chevron {
-      width: 14px;
-      height: 14px;
+      width: 14px; height: 14px;
       border-right: 1.5px solid rgba(237,236,236,0.55);
       border-bottom: 1.5px solid rgba(237,236,236,0.55);
       transform: rotate(45deg);
       animation: arrowBlink 1.4s ease-in-out infinite;
     }
     @keyframes arrowBlink {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 0.15; }
+      0%,100%{ opacity: 0.7; } 50%{ opacity: 0.15; }
     }
 
-    /* ─── HERO placeholder ────────────────────────────────────────── */
+    /* ─── HERO ── */
     #hero {
-      height: var(--vh100);
-      scroll-snap-align: start;
-      scroll-snap-stop: always;
-      background: transparent;
-      flex-shrink: 0;
+      height: var(--vh100); scroll-snap-align: start;
+      scroll-snap-stop: always; background: transparent; flex-shrink: 0;
     }
 
-    /* ─── WORKS ───────────────────────────────────────────────────── */
+    /* ─── WORKS ── */
     #works {
-      position: relative;
-      z-index: 6;
-      display: flex;
-      flex-direction: column;
-      background: transparent;
-      padding: 72px var(--pad-x) 0;
-      scroll-snap-align: start;
-      scroll-snap-stop: always;
-      flex-shrink: 0;
+      position: relative; z-index: 6; display: flex; flex-direction: column;
+      background: transparent; padding: 72px var(--pad-x) 0;
+      scroll-snap-align: start; scroll-snap-stop: always; flex-shrink: 0;
     }
     .works-header { margin-bottom: 40px; text-align: center; }
-    .works-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 3px;
-      width: 100%;
-    }
-    .work-card {
-      position: relative;
-      aspect-ratio: 4/3;
-      overflow: hidden;
-      background: #111;
-    }
-    /* touch devices get default cursor on cards */
+    .works-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 3px; width: 100%; }
+    .work-card { position: relative; aspect-ratio: 4/3; overflow: hidden; background: #111; }
     @media (pointer: fine) { .work-card { cursor: none; } }
-
     .work-card-thumb {
-      width: 100%; height: 100%;
-      background-size: cover;
-      background-position: center;
-      filter: grayscale(40%) brightness(0.6);
-      transition: filter 0.3s ease;
+      width: 100%; height: 100%; background-size: cover; background-position: center;
+      filter: grayscale(40%) brightness(0.6); transition: filter 0.3s ease;
     }
-    .work-card:hover .work-card-thumb {
-      filter: grayscale(20%) brightness(0.75);
-    }
+    .work-card:hover .work-card-thumb { filter: grayscale(20%) brightness(0.75); }
     .work-card-overlay {
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 22px;
+      display: flex; flex-direction: column; justify-content: flex-end; padding: 22px;
     }
     .work-card-title {
-      font-family: 'Major Mono Display', monospace;
-      font-weight: 400;
-      font-size: 14px;
-      letter-spacing: 0.08em;
-      text-transform: lowercase;
-      color: #fff;
+      font-family: 'Major Mono Display', monospace; font-weight: 400;
+      font-size: 14px; letter-spacing: 0.08em; text-transform: lowercase; color: #fff;
       text-shadow: 0 0 12px rgba(0,0,0,1), 0 2px 8px rgba(0,0,0,1);
     }
     .work-card-num {
-      font-family: 'Roboto Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.3em;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 6px;
-      text-shadow: 0 0 8px rgba(0,0,0,1);
+      font-family: 'Roboto Mono', monospace; font-size: 10px;
+      letter-spacing: 0.3em; color: rgba(255,255,255,0.7);
+      margin-bottom: 6px; text-shadow: 0 0 8px rgba(0,0,0,1);
     }
 
-    /* ─── CONTACT ─────────────────────────────────────────────────── */
+    /* ─── CONTACT ── */
     .works-contact {
-      /* Extra bottom padding on iOS so links clear the browser chrome.
-         env(safe-area-inset-bottom) is 0 on non-iOS, so this is harmless elsewhere. */
-      padding: 72px 0 calc(72px + env(safe-area-inset-bottom, 0px));
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 48px;
+      padding: 72px 0 calc(72px + env(safe-area-inset-bottom,0px));
+      display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 48px;
     }
     .qr-link {
-      font-family: var(--display);
-      font-weight: 400;
-      font-size: 15px;
-      letter-spacing: 0.3em;
-      text-transform: lowercase;
-      color: #fff;
-      text-decoration: none;
-      transition: color 0.2s;
+      font-family: var(--display); font-weight: 400; font-size: 15px;
+      letter-spacing: 0.3em; text-transform: lowercase; color: #fff;
+      text-decoration: none; transition: color 0.2s;
       text-shadow: 0 0 10px rgba(0,0,0,0.9);
     }
-    /* touch: restore default cursor on links */
     @media (pointer: fine) { .qr-link { cursor: none; } }
     .qr-link:hover { color: var(--red); }
 
-    /* ─── ANIMATIONS ─────────────────────────────────────────────── */
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .reveal {
-      opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.7s ease, transform 0.7s ease;
-    }
+    /* ─── REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
     .reveal.visible { opacity: 1; transform: none; }
 
-    /* ─── MODAL ──────────────────────────────────────────────────── */
+    /* ─── MODAL ── */
     .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.92);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 10000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
     }
     .overlay.open { opacity: 1; pointer-events: all; }
     .overlay-close {
-      position: absolute;
-      top: 32px; right: 40px;
-      font-family: var(--display);
-      font-weight: 300;
-      font-size: 12px;
-      letter-spacing: 0.2em;
-      color: rgba(237,236,236,0.5);
-      transition: color 0.2s;
+      position: absolute; top: 32px; right: 40px;
+      font-family: var(--display); font-weight: 300; font-size: 12px;
+      letter-spacing: 0.2em; color: rgba(237,236,236,0.5); transition: color 0.2s;
     }
     @media (pointer: fine) { .overlay-close { cursor: none; } }
     .overlay-close:hover { color: var(--fg); }
     .overlay-inner { width: 90%; max-width: 900px; display: flex; flex-direction: column; gap: 24px; }
     .overlay-video iframe { width: 100%; aspect-ratio: 16/9; border: none; }
     .overlay-desc {
-      font-family: var(--display);
-      font-weight: 300;
-      font-size: 18px;
-      line-height: 1.8;
-      color: rgba(237,236,236,0.75);
+      font-family: var(--display); font-weight: 300; font-size: 18px;
+      line-height: 1.8; color: rgba(237,236,236,0.75);
     }
     .overlay-desc .hl {
-      color: #000;
-      background-color: var(--red);
-      padding: 0 3px;
-      font-weight: 700;
-      animation: blinkRedBg 1.1s step-start infinite;
+      color: #000; background-color: var(--red); padding: 0 3px;
+      font-weight: 700; animation: blinkRedBg 1.1s step-start infinite;
     }
 
-    /* ─── MOBILE ─────────────────────────────────────────────────── */
+    /* ─── AUDIO TOGGLE
+         z-index: 100000 — must be above intro-screen (99999)
+         so it is clickable and visible during the intro too.        ── */
+    #audio-toggle {
+      position: fixed; bottom: 30px; right: 30px;
+      z-index: 100000;                /* above intro-screen */
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; padding: 0;
+      opacity: 0; transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+    #audio-toggle.visible { opacity: 1; pointer-events: all; }
+    @media (pointer: fine) { #audio-toggle { cursor: none; } }
+    #audio-toggle svg { display: block; transition: opacity 0.2s; }
+    #audio-toggle:hover svg { opacity: 0.55; }
+
+    /* ─── MOBILE ── */
     @media (max-width: 900px) {
       :root { --pad-x: 24px; }
       .works-grid { grid-template-columns: 1fr; }
@@ -375,6 +235,7 @@
   </style>
 </head>
 <body>
+
   <!-- INTRO -->
   <div id="intro-screen">
     <div id="intro-slide-1">
@@ -386,19 +247,13 @@
     </div>
   </div>
 
-  <!-- CURSOR (hidden on touch via CSS) -->
+  <!-- CURSOR -->
   <div class="cursor" id="cursor"></div>
 
-  <!-- BACKGROUND VIDEO
-       • autoplay muted playsinline are all required for iOS Safari autoplay
-       • webkit-playsinline for older iOS
-       • disablePictureInPicture / x-webkit-airplay suppress extra iOS UI -->
+  <!-- BACKGROUND VIDEO — unmuted; its audio is the main-page soundtrack -->
   <video
     id="hero-video"
-    autoplay
-    muted
-    loop
-    playsinline
+    autoplay loop playsinline
     webkit-playsinline
     disablePictureInPicture
     x-webkit-airplay="deny"
@@ -407,22 +262,15 @@
     <source src="_assets/background.mp4" type="video/mp4">
   </video>
 
-  <!-- VIGNETTE z-index:4 -->
   <div class="hero-vignette"></div>
-
-  <!-- SCROLL FADE z-index:5 -->
   <div id="scroll-fade"></div>
 
   <!-- SCROLL ARROW -->
-  <div id="scroll-arrow">
-    <div class="arrow-chevron"></div>
-  </div>
+  <div id="scroll-arrow"><div class="arrow-chevron"></div></div>
 
-  <!-- SCROLL ROOT z-index:3 -->
+  <!-- SCROLL ROOT -->
   <div id="scroll-root">
     <section id="hero"></section>
-
-    <!-- WORKS -->
     <section id="works">
       <div class="works-header reveal"></div>
       <div class="works-grid" id="worksGrid"></div>
@@ -442,225 +290,369 @@
     </div>
   </div>
 
+  <!-- AUDIO TOGGLE — bare icon, z-index above intro -->
+  <div id="audio-toggle">
+    <svg id="icon-on" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+         fill="none" stroke="rgba(237,236,236,0.65)" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+    </svg>
+    <svg id="icon-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+         fill="none" stroke="rgba(237,236,236,0.3)" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+      <line x1="23" y1="9" x2="17" y2="15"/>
+      <line x1="17" y1="9" x2="23" y2="15"/>
+    </svg>
+  </div>
+
   <script>
-    /* ─── AUDIO ──────────────────────────────────────────────────── */
-    const FADE_IN  = 0.6;
-    const FADE_OUT = 0.8;
+    /* ══════════════════════════════════════════════════════════════
+       AUDIO ARCHITECTURE
 
-    function makeAudio(src, loop = false) {
-      const a = new Audio('_assets/' + src);
-      a.loop = loop;
-      a.volume = 0;
-      return a;
+       INTRO PHASE  (intro-screen visible)
+         • main.mp3 plays from 0, volume fades in over 1.4 s
+         • heroVideo.volume = 0 (silent during intro)
+         • toggle visible from frame 1; controls introAudio
+
+       TRANSITION   (4.5 s into tagline slide, ~1 s before intro hides)
+         • introAudio fades out over 1 s, then stops
+         • heroVideo fades in over 1 s
+
+       MAIN PHASE   (intro gone)
+         • heroVideo loops; toggle controls heroVideo.volume
+         • Video loop crossfade: timeupdate watches for the seam,
+           dips volume ~0.5 s before the loop point, restores after.
+           This kills the click that the browser's hard loop causes.
+
+       MODAL OPEN   → video ducks to 20 %
+       YT PLAY btn  → video mutes to 0
+       MODAL CLOSE  → video restores to full (or 0 if user-muted)
+    ══════════════════════════════════════════════════════════════ */
+
+    const heroVideo   = document.getElementById('hero-video');
+    const audioToggle = document.getElementById('audio-toggle');
+    const iconOn      = document.getElementById('icon-on');
+    const iconOff     = document.getElementById('icon-off');
+
+    let phase      = 'intro';  // 'intro' | 'main'
+    let userMuted  = false;
+    let modalOpen  = false;
+
+    /* ── Crossfade state for video loop seam ── */
+    let videoDuration    = 0;   // set once metadata loads
+    let loopFading       = false;
+    const LOOP_XFADE_DUR = 0.5; // seconds to dip before & after loop point
+
+    /* ════ generic volume ramp ════ */
+    function fadeTo(target, obj, duration, onDone) {
+      const start = obj.volume;
+      const diff  = target - start;
+      const steps = Math.max(Math.round(duration * 60), 1);
+      const step  = diff / steps;
+      let count   = 0;
+      ;(function tick() {
+        count++;
+        obj.volume = Math.min(Math.max(obj.volume + step, 0), 1);
+        if (count < steps) { requestAnimationFrame(tick); }
+        else { obj.volume = target; if (onDone) onDone(); }
+      })();
     }
 
-    function fadeIn(audio, duration = FADE_IN) {
-      audio.volume = 0;
-      audio.play().catch(() => {});
-      const step = 1 / (duration * 60);
-      const tick = () => {
-        audio.volume = Math.min(audio.volume + step, 1);
-        if (audio.volume < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+    /* ════ icon helper ════ */
+    function updateIcon(audioOn) {
+      iconOn.style.display  = audioOn ? 'block' : 'none';
+      iconOff.style.display = audioOn ? 'none'  : 'block';
     }
 
-    function fadeOut(audio, duration = FADE_OUT, onDone) {
-      const step = Math.max(audio.volume / (duration * 60), 0.001);
-      const tick = () => {
-        audio.volume = Math.max(audio.volume - step, 0);
-        if (audio.volume > 0) { requestAnimationFrame(tick); }
-        else { audio.pause(); audio.currentTime = 0; if (onDone) onDone(); }
-      };
-      requestAnimationFrame(tick);
-    }
+    /* ════ what is the current "desired" volume (ignoring modal duck) ════ */
+    function desiredVolume() { return userMuted ? 0 : 1; }
 
-    const audioReveal   = makeAudio('reveal.mp3',  false);
-    const audioContinue = makeAudio('continue.mp3', false);
-    const audioMain     = makeAudio('main.mp3',     true);
+    /* ════ VIDEO LOOP CROSSFADE ════
+       Smoothly dip volume right before the loop seam to silence the
+       click that the browser's hard cut causes, then restore after. */
+    heroVideo.addEventListener('loadedmetadata', () => {
+      videoDuration = heroVideo.duration;
+    });
 
-    /* ─── iOS VIDEO AUTOPLAY FALLBACK ────────────────────────────── */
-    // On iOS Safari the video sometimes needs a user-gesture nudge.
-    // We attempt to play immediately; if it fails we silently retry on
-    // the first touch interaction (which iOS permits).
-    const heroVideo = document.getElementById('hero-video');
+    heroVideo.addEventListener('timeupdate', () => {
+      if (phase !== 'main' || userMuted || modalOpen || videoDuration === 0) return;
+      const remaining = videoDuration - heroVideo.currentTime;
 
-    function attemptVideoPlay() {
-      const p = heroVideo.play();
-      if (p !== undefined) {
-        p.catch(() => {
-          // Play was prevented – wait for a user interaction
+      if (!loopFading && remaining <= LOOP_XFADE_DUR) {
+        loopFading = true;
+        /* Dip to 0 over the remaining time */
+        fadeTo(0, heroVideo, remaining, () => {
+          /* After the loop resets (currentTime jumps to ~0), fade back in */
+          const waitForLoop = setInterval(() => {
+            if (heroVideo.currentTime < LOOP_XFADE_DUR) {
+              clearInterval(waitForLoop);
+              fadeTo(desiredVolume(), heroVideo, LOOP_XFADE_DUR, () => {
+                loopFading = false;
+              });
+            }
+          }, 16);
+        });
+      }
+    });
+
+    /* ════ TOGGLE ════ */
+    audioToggle.addEventListener('click', () => {
+      userMuted = !userMuted;
+      updateIcon(!userMuted);
+
+      if (phase === 'intro') {
+        if (userMuted) {
+          fadeTo(0, introAudio, 0.3, () => introAudio.pause());
+        } else {
+          introAudio.play().catch(() => {});
+          fadeTo(1, introAudio, 0.4);
+        }
+      } else {
+        if (userMuted) {
+          fadeTo(0, heroVideo, 0.3);
+        } else if (!modalOpen && !loopFading) {
+          fadeTo(1, heroVideo, 0.4);
+        } else if (modalOpen && !userMuted) {
+          fadeTo(0.2, heroVideo, 0.4);
+        }
+      }
+    });
+
+    /* Show toggle immediately (above intro screen via z-index) */
+    audioToggle.classList.add('visible');
+
+    /* ════ INTRO AUDIO (main.mp3) ════ */
+    const introAudio   = new Audio('_assets/main.mp3');
+    introAudio.loop    = false;
+    introAudio.volume  = 0;
+    introAudio.preload = 'auto';
+
+    /* Video starts silent during intro */
+    heroVideo.volume = 0;
+    heroVideo.muted  = false;
+
+    function startIntroAudio() {
+      introAudio.currentTime = 0;
+      introAudio.play()
+        .then(() => {
+          fadeTo(1, introAudio, 1.4);
+          updateIcon(true);
+        })
+        .catch(() => {
+          /* Autoplay blocked — show muted icon, retry on first tap/click */
+          updateIcon(false);
+          userMuted = true;
           const resume = () => {
-            heroVideo.play().catch(() => {});
-            document.removeEventListener('touchstart', resume, { once: true });
-            document.removeEventListener('click',      resume, { once: true });
+            userMuted = false;
+            introAudio.play()
+              .then(() => { fadeTo(1, introAudio, 1.4); updateIcon(true); })
+              .catch(() => {});
           };
           document.addEventListener('touchstart', resume, { once: true, passive: true });
           document.addEventListener('click',      resume, { once: true });
         });
+    }
+
+    /* ════ TRANSITION: mp3 out → video in ════ */
+    function transitionToMainAudio() {
+      phase = 'main';
+      fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
+      if (!userMuted) {
+        heroVideo.play().catch(() => {});
+        fadeTo(1, heroVideo, 1.0);
       }
     }
 
-    // Try right away, then also after the window loads (whichever is later)
-    if (heroVideo.readyState >= 2) {
-      attemptVideoPlay();
-    } else {
-      heroVideo.addEventListener('canplay', attemptVideoPlay, { once: true });
+    /* ════ iOS video autoplay ════ */
+    function attemptVideoPlay() {
+      heroVideo.play().catch(() => {
+        const r = () => {
+          heroVideo.play().catch(() => {});
+          document.removeEventListener('touchstart', r, { once: true });
+          document.removeEventListener('click',      r, { once: true });
+        };
+        document.addEventListener('touchstart', r, { once: true, passive: true });
+        document.addEventListener('click',      r, { once: true });
+      });
     }
+    if (heroVideo.readyState >= 2) { attemptVideoPlay(); }
+    else { heroVideo.addEventListener('canplay', attemptVideoPlay, { once: true }); }
 
-    /* ─── INTRO ─────────────────────────────────────────────────── */
-    const introEl    = document.getElementById('intro-text');
-    const introBar   = document.getElementById('intro-bar');
-    const introScreen= document.getElementById('intro-screen');
-    const slide1     = document.getElementById('intro-slide-1');
-    const slide2     = document.getElementById('intro-slide-2');
-    const taglineEl  = document.getElementById('intro-tagline');
+    /* ════ INTRO ANIMATION ════ */
+    const introEl     = document.getElementById('intro-text');
+    const introBar    = document.getElementById('intro-bar');
+    const introScreen = document.getElementById('intro-screen');
+    const slide1      = document.getElementById('intro-slide-1');
+    const slide2      = document.getElementById('intro-slide-2');
+    const taglineEl   = document.getElementById('intro-tagline');
 
     const TARGET = 'XENOLITH', CHARS = '#@$%!&*^?~<>|/\\+-=', DURATION = 3200;
     let startTime = null;
 
-    function lerpColor(r1,g1,b1,r2,g2,b2,t){
-      return[Math.round(r1+(r2-r1)*t),Math.round(g1+(g2-g1)*t),Math.round(b1+(b2-b1)*t)];
+    function lerpColor(r1,g1,b1,r2,g2,b2,t) {
+      return [Math.round(r1+(r2-r1)*t), Math.round(g1+(g2-g1)*t), Math.round(b1+(b2-b1)*t)];
     }
-    const CR=[228,4,4], CW=[237,236,236];
+    const CR = [228,4,4], CW = [237,236,236];
 
-    function scrambleTick(now){
-      if(!startTime){ startTime=now; fadeIn(audioReveal); }
-      const t=Math.min((now-startTime)/DURATION,1);
-      const[r,g,b]=lerpColor(CR[0],CR[1],CR[2],CW[0],CW[1],CW[2],t);
-      const col=`rgb(${r},${g},${b})`, colDim=`rgba(${r},${g},${b},0.22)`;
-      const ss=Math.round(4+(1-t)*18), so=(0.9-t*0.5).toFixed(2);
-      introEl.style.textShadow=`0 0 ${ss}px rgba(${r},${g},${b},${so}),0 0 ${ss*3}px rgba(${r},${g},${b},${(so*0.4).toFixed(2)})`;
-      introEl.style.color=col;
-      introBar.style.width=(t*100)+'%';
-      introBar.style.background=`linear-gradient(to right,transparent,${col},transparent)`;
-      introBar.style.boxShadow=`0 0 8px rgba(${r},${g},${b},0.6)`;
-      let html='';
-      for(let i=0;i<TARGET.length;i++){
-        const lockAt=(i/(TARGET.length-1))*0.85;
-        if(t>=lockAt+0.12){html+=`<span style="color:${col}">${TARGET[i]}</span>`;}
-        else if(t>=lockAt){const fc=(t-lockAt)/0.12;const ch=Math.random()<fc?TARGET[i]:CHARS[Math.floor(Math.random()*CHARS.length)];html+=`<span style="color:${col}">${ch}</span>`;}
-        else{html+=`<span style="color:${colDim}">${CHARS[Math.floor(Math.random()*CHARS.length)]}</span>`;}
+    function scrambleTick(now) {
+      if (!startTime) {
+        startTime = now;
+        if (introAudio.readyState >= 2) { startIntroAudio(); }
+        else { introAudio.addEventListener('canplay', startIntroAudio, { once: true }); }
       }
-      introEl.innerHTML=html;
-      if(t<1){requestAnimationFrame(scrambleTick);}
-      else{
-        introEl.innerHTML=TARGET;
-        introEl.style.color=`rgb(${CW[0]},${CW[1]},${CW[2]})`;
-        introEl.style.textShadow='0 0 6px rgba(237,236,236,0.3)';
-        introBar.style.width='100%';
+      const t       = Math.min((now - startTime) / DURATION, 1);
+      const [r,g,b] = lerpColor(CR[0],CR[1],CR[2],CW[0],CW[1],CW[2], t);
+      const col     = `rgb(${r},${g},${b})`;
+      const colDim  = `rgba(${r},${g},${b},0.22)`;
+      const ss      = Math.round(4 + (1-t)*18);
+      const so      = (0.9 - t*0.5).toFixed(2);
+      introEl.style.textShadow  = `0 0 ${ss}px rgba(${r},${g},${b},${so}),0 0 ${ss*3}px rgba(${r},${g},${b},${(so*0.4).toFixed(2)})`;
+      introEl.style.color       = col;
+      introBar.style.width      = (t*100)+'%';
+      introBar.style.background = `linear-gradient(to right,transparent,${col},transparent)`;
+      introBar.style.boxShadow  = `0 0 8px rgba(${r},${g},${b},0.6)`;
+      let html = '';
+      for (let i = 0; i < TARGET.length; i++) {
+        const lockAt = (i/(TARGET.length-1))*0.85;
+        if      (t >= lockAt+0.12) { html += `<span style="color:${col}">${TARGET[i]}</span>`; }
+        else if (t >= lockAt)      { const fc=(t-lockAt)/0.12; const ch=Math.random()<fc?TARGET[i]:CHARS[Math.floor(Math.random()*CHARS.length)]; html+=`<span style="color:${col}">${ch}</span>`; }
+        else                       { html += `<span style="color:${colDim}">${CHARS[Math.floor(Math.random()*CHARS.length)]}</span>`; }
+      }
+      introEl.innerHTML = html;
+      if (t < 1) { requestAnimationFrame(scrambleTick); }
+      else {
+        introEl.innerHTML        = TARGET;
+        introEl.style.color      = `rgb(${CW[0]},${CW[1]},${CW[2]})`;
+        introEl.style.textShadow = '0 0 6px rgba(237,236,236,0.3)';
+        introBar.style.width     = '100%';
         setTimeout(showTagline, 520);
       }
     }
     requestAnimationFrame(scrambleTick);
 
-    function showTagline(){
-      slide1.style.transition='opacity 0.6s ease';
-      slide1.style.opacity='0';
-      fadeOut(audioReveal, FADE_OUT, () => fadeIn(audioContinue));
+    function showTagline() {
+      slide1.style.transition = 'opacity 0.6s ease';
+      slide1.style.opacity    = '0';
       taglineEl.innerHTML =
         'xenolith is an artist collective focused on the intersection of&nbsp;' +
         '<span class="blink-red">music</span>' +
         ',&nbsp;<span class="blink-red">video</span>' +
         ', and&nbsp;<span class="blink-red">experience</span>.';
-      setTimeout(()=>{ slide2.classList.add('visible'); }, 400);
-      setTimeout(()=>{
-        fadeOut(audioContinue, FADE_OUT, () => fadeIn(audioMain));
+      setTimeout(() => slide2.classList.add('visible'), 400);
+      setTimeout(() => transitionToMainAudio(), 4500);   /* audio crossover */
+      setTimeout(() => {
         introScreen.classList.add('hidden');
-        setTimeout(()=>{ introScreen.style.display='none'; }, 950);
+        setTimeout(() => { introScreen.style.display = 'none'; }, 950);
       }, 5500);
     }
 
-    /* ─── WORKS DATA ─────────────────────────────────────────────── */
-    const worksData=[
-      {title:'Red Dreams',thumbnail:'_assets/reddreams.jpg',youtube:'https://www.youtube.com/embed/CcBfQrdjxkk',description:`We created the music and sound design for "<span class="hl">Red Dreams</span>". Each tone is <span class="hl">raw</span>, <span class="hl">vague</span> and <span class="hl">enigmatic</span>. The result is an experimental soundscape, simple yet open to endless interpretation.`},
-      {title:'The Last Of Us',thumbnail:'_assets/TheLastOfUsPreview.png',youtube:'https://www.youtube.com/embed/-JO-2nbI2G8',description:`This is the alternative soundtrack we made for the TV series <span class="hl">The Last of Us</span>. The raw sound of the guitar and voice capture the atmosphere, recorded as if echoing a real-life moment from the series. <span class="hl">The song was recorded in an abandoned house in Toronto, Ontario</span>.`}
+    /* ════ WORKS DATA ════ */
+    const worksData = [
+      {
+        title: 'Red Dreams',
+        thumbnail: '_assets/reddreams.jpg',
+        youtube: 'https://www.youtube.com/embed/CcBfQrdjxkk',
+        description: `We created the music and sound design for "<span class="hl">Red Dreams</span>". Each tone is <span class="hl">raw</span>, <span class="hl">vague</span> and <span class="hl">enigmatic</span>. The result is an experimental soundscape, simple yet open to endless interpretation.`
+      },
+      {
+        title: 'The Last Of Us',
+        thumbnail: '_assets/TheLastOfUsPreview.png',
+        youtube: 'https://www.youtube.com/embed/-JO-2nbI2G8',
+        description: `This is the alternative soundtrack we made for the TV series <span class="hl">The Last of Us</span>. The raw sound of the guitar and voice capture the atmosphere, recorded as if echoing a real-life moment from the series. <span class="hl">The song was recorded in an abandoned house in Toronto, Ontario</span>.`
+      }
     ];
-    const grid=document.getElementById('worksGrid');
-    worksData.forEach((work,i)=>{
-      const card=document.createElement('div');
-      card.className='work-card reveal';
-      card.style.transitionDelay=`${i*0.08}s`;
-      card.innerHTML=`<div class="work-card-thumb" style="background-image:url('${work.thumbnail}')"></div><div class="work-card-overlay"><div class="work-card-num">0${i+1}</div><div class="work-card-title">${work.title}</div></div>`;
-      if(work.youtube) card.addEventListener('click',()=>openOverlay(work.youtube,work.description));
+
+    const grid = document.getElementById('worksGrid');
+    worksData.forEach((work, i) => {
+      const card = document.createElement('div');
+      card.className = 'work-card reveal';
+      card.style.transitionDelay = `${i*0.08}s`;
+      card.innerHTML = `<div class="work-card-thumb" style="background-image:url('${work.thumbnail}')"></div><div class="work-card-overlay"><div class="work-card-num">0${i+1}</div><div class="work-card-title">${work.title}</div></div>`;
+      if (work.youtube) card.addEventListener('click', () => openOverlay(work.youtube, work.description));
       grid.appendChild(card);
     });
 
-    /* ─── MODAL ──────────────────────────────────────────────────── */
-    const overlay     = document.getElementById('overlay');
-    const overlayVideo= document.getElementById('overlayVideo');
-    const overlayDesc = document.getElementById('overlayDesc');
-    const overlayClose= document.getElementById('overlayClose');
-    function openOverlay(yt,desc){
-      overlayVideo.innerHTML=`<iframe src="${yt}?autoplay=1" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>`;
-      overlayDesc.innerHTML=`<p>${desc}</p>`;
+    /* ════ MODAL ════ */
+    const overlay      = document.getElementById('overlay');
+    const overlayVideo = document.getElementById('overlayVideo');
+    const overlayDesc  = document.getElementById('overlayDesc');
+    const overlayClose = document.getElementById('overlayClose');
+
+    function openOverlay(yt, desc) {
+      modalOpen = true;
+      if (!userMuted) fadeTo(0.2, heroVideo, 0.4);   /* duck to 20 % */
+      overlayDesc.innerHTML = `<p>${desc}</p>`;
       overlay.classList.add('open');
+
+      /* Show a play button placeholder — YT iframe loads only on click,
+         which also triggers the full mute */
+      overlayVideo.innerHTML = `
+        <div id="yt-placeholder" style="width:100%;aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="36" fill="rgba(0,0,0,0.55)"/>
+            <polygon points="28,20 56,36 28,52" fill="rgba(255,255,255,0.85)"/>
+          </svg>
+        </div>`;
+
+      document.getElementById('yt-placeholder').addEventListener('click', () => {
+        if (!userMuted) fadeTo(0, heroVideo, 0.4);   /* mute fully once YT plays */
+        overlayVideo.innerHTML = `<iframe src="${yt}?autoplay=1" frameborder="0"
+          allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
+          allowfullscreen></iframe>`;
+      }, { once: true });
     }
-    function closeOverlay(){ overlay.classList.remove('open'); overlayVideo.innerHTML=''; }
-    overlayClose.addEventListener('click',closeOverlay);
-    overlay.addEventListener('click',e=>{ if(e.target===overlay) closeOverlay(); });
 
-    /* ─── CURSOR ─────────────────────────────────────────────────── */
+    function closeOverlay() {
+      modalOpen = false;
+      overlay.classList.remove('open');
+      overlayVideo.innerHTML = '';
+      if (!userMuted) fadeTo(1, heroVideo, 0.5);   /* restore */
+    }
+
+    overlayClose.addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(); });
+
+    /* ════ CURSOR ════ */
     const cursor = document.getElementById('cursor');
-
-    // Only wire up cursor logic on pointer-fine devices (non-touch)
     if (window.matchMedia('(pointer: fine)').matches) {
-      let cursorIdleTimer = null;
-
-      const IDLE_MS = 1000; // hide cursor after 1 s of inactivity
-
-      function resetIdleTimer() {
+      let idleTimer = null;
+      function resetIdle() {
         cursor.classList.remove('invisible');
-        clearTimeout(cursorIdleTimer);
-        cursorIdleTimer = setTimeout(() => {
-          cursor.classList.add('invisible');
-        }, IDLE_MS);
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => cursor.classList.add('invisible'), 1000);
       }
-
       document.addEventListener('mousemove', e => {
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top  = e.clientY + 'px';
-        resetIdleTimer();
+        cursor.style.left = e.clientX+'px';
+        cursor.style.top  = e.clientY+'px';
+        resetIdle();
       });
-
-      // Hide when pointer leaves the browser window
-      document.addEventListener('mouseleave', () => {
-        cursor.classList.add('invisible');
-        clearTimeout(cursorIdleTimer);
-      });
-      document.addEventListener('mouseenter', () => {
-        resetIdleTimer();
-      });
-
-      document.querySelectorAll('a,.work-card,button,.overlay-close,.qr-link').forEach(el => {
+      document.addEventListener('mouseleave', () => { cursor.classList.add('invisible'); clearTimeout(idleTimer); });
+      document.addEventListener('mouseenter', resetIdle);
+      document.querySelectorAll('a,.work-card,.overlay-close,.qr-link,#audio-toggle').forEach(el => {
         el.addEventListener('mouseenter', () => cursor.classList.add('expand'));
         el.addEventListener('mouseleave', () => cursor.classList.remove('expand'));
       });
-
-      // Start the idle timer immediately
-      resetIdleTimer();
+      resetIdle();
     }
 
-    /* ─── SCROLL FADE + ARROW ────────────────────────────────────── */
+    /* ════ SCROLL ════ */
     const scrollRoot  = document.getElementById('scroll-root');
     const scrollFade  = document.getElementById('scroll-fade');
     const heroEl      = document.getElementById('hero');
     const scrollArrow = document.getElementById('scroll-arrow');
-
     scrollRoot.addEventListener('scroll', () => {
-      const scrollY   = scrollRoot.scrollTop;
-      const heroH     = heroEl.offsetHeight;
-      const progress  = Math.min(scrollY / heroH, 1);
-      scrollFade.style.opacity = progress;
-      if (scrollY > 40) { scrollArrow.classList.add('hidden'); }
-      else              { scrollArrow.classList.remove('hidden'); }
+      scrollFade.style.opacity = Math.min(scrollRoot.scrollTop / heroEl.offsetHeight, 1);
+      scrollArrow.classList.toggle('hidden', scrollRoot.scrollTop > 40);
     });
 
-    /* ─── REVEAL ON SCROLL ───────────────────────────────────────── */
-    const revealObserver = new IntersectionObserver(entries => {
+    /* ════ REVEAL ════ */
+    const revealObs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
     }, { root: scrollRoot, threshold: 0.08 });
-    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
   </script>
 </body>
 </html>
