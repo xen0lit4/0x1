@@ -377,83 +377,121 @@
       }
     });
 
-    /* ════ TOGGLE — volume only, never touches playback ════ */
+    /* ════ INTRO AUDIO ════ */
+    const introAudio   = new Audio('_assets/main.mp3');
+    introAudio.loop    = false;
+    introAudio.preload = 'auto';
+
+    /* Start muted — muted autoplay is always allowed by browsers.
+       The audio is playing from t=0 in sync with the animation.
+       We just can't be heard yet until a gesture unlocks audio.   */
+    introAudio.muted  = true;
+    introAudio.volume = 1;
+
+    /* Keep video silent during intro */
+    heroVideo.muted  = true;
+    heroVideo.volume = 1;
+
+    /* Has the user ever interacted? Needed to unlock audio context. */
+    let audioUnlocked = false;
+
+    /* Called on first ever gesture — unmutes whichever source is active */
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+
+      if (!userMuted) {
+        if (phase === 'intro') {
+          introAudio.muted = false;
+          introAudio.volume = 0;
+          fadeTo(1, introAudio, 0.6);
+        } else {
+          heroVideo.muted = false;
+          heroVideo.volume = 0;
+          fadeTo(modalOpen ? 0.2 : 1, heroVideo, 0.6);
+        }
+        updateIcon(true);
+      } else {
+        updateIcon(false);
+      }
+
+      document.removeEventListener('click',      unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('keydown',    unlockAudio);
+    }
+
+    document.addEventListener('click',      unlockAudio, { passive: true });
+    document.addEventListener('touchstart', unlockAudio, { passive: true });
+    document.addEventListener('keydown',    unlockAudio, { passive: true });
+
+    /* ════ TOGGLE ════ */
     audioToggle.addEventListener('click', () => {
+      /* If not yet unlocked, the unlockAudio handler fires first
+         (same click), so by the time we get here audioUnlocked=true */
       userMuted = !userMuted;
       updateIcon(!userMuted);
 
+      if (!audioUnlocked) return; // nothing audible yet — just track preference
+
       if (phase === 'intro') {
-        fadeTo(userMuted ? 0 : 1, introAudio, 0.4);
+        if (userMuted) {
+          fadeTo(0, introAudio, 0.4, () => { introAudio.muted = true; });
+        } else {
+          introAudio.muted = false;
+          fadeTo(1, introAudio, 0.4);
+        }
       } else {
-        if (!modalOpen && !loopFading) {
-          fadeTo(userMuted ? 0 : 1, heroVideo, 0.4);
-        } else if (modalOpen) {
-          fadeTo(userMuted ? 0 : 0.2, heroVideo, 0.4);
+        const target = userMuted ? 0 : (modalOpen ? 0.2 : 1);
+        if (!userMuted) heroVideo.muted = false;
+        if (!loopFading) {
+          fadeTo(target, heroVideo, 0.4, () => { if (userMuted) heroVideo.muted = true; });
         }
       }
     });
 
-    /* Show toggle immediately — above intro screen via z-index */
+    /* Show toggle immediately */
     audioToggle.classList.add('visible');
+    /* Icon shows "on" — audio IS playing, just muted by browser policy.
+       First click will unlock it. */
     updateIcon(true);
 
-    /* ════ INTRO AUDIO ════ */
-    const introAudio   = new Audio('_assets/main.mp3');
-    introAudio.loop    = false;
-    introAudio.volume  = 0;
-    introAudio.preload = 'auto';
-
-    /* Keep video silent during intro */
-    heroVideo.volume = 0;
-    heroVideo.muted  = false;
-
-    /* ── Gesture-unlock helper (called if autoplay is blocked) ── */
-    function setupGestureUnlock(audioNode) {
-      const unlock = () => {
-        audioNode.play().catch(() => {});
-        document.removeEventListener('click',      unlock);
-        document.removeEventListener('touchstart', unlock);
-      };
-      document.addEventListener('click',      unlock, { once: true, passive: true });
-      document.addEventListener('touchstart', unlock, { once: true, passive: true });
-    }
-
-    /* ── Start intro audio — always called once scramble begins ── */
+    /* ── Start intro audio — called once scramble begins ── */
     function startIntroAudio() {
-      if (userMuted) return; // user already tapped mute before scramble fired
-
       introAudio.currentTime = 0;
-      introAudio.volume      = 0;
-
-      /* Ramp volume unconditionally — this runs regardless of
-         whether play() succeeds or is blocked by the browser.    */
-      fadeTo(1, introAudio, 1.4);
-
-      const p = introAudio.play();
-      if (p && typeof p.then === 'function') {
-        p.catch(() => {
-          /* Browser blocked autoplay.
-             Keep icon "on" — the gesture listener below will start
-             audio on the very next click/tap (volume is already at
-             the ramped level so sound begins immediately).        */
-          setupGestureUnlock(introAudio);
-        });
-      }
+      introAudio.play().catch(() => {
+        /* Extremely rare: even muted autoplay blocked.
+           Will still unlock on first gesture via unlockAudio. */
+      });
     }
 
     /* ════ TRANSITION: mp3 out → video in ════ */
     function transitionToMainAudio() {
       phase = 'main';
-      fadeTo(0, introAudio, 1.0, () => {
+
+      /* Fade out and stop intro mp3 */
+      if (!introAudio.muted) {
+        fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
+      } else {
         introAudio.pause();
         introAudio.currentTime = 0;
-      });
+      }
+
+      /* Video visual loop is already running muted.
+         If audio is unlocked and user hasn't muted, unmute video. */
       heroVideo.play().catch(() => {});
-      fadeTo(userMuted ? 0 : 1, heroVideo, 1.0);
+      if (audioUnlocked && !userMuted) {
+        heroVideo.muted  = false;
+        heroVideo.volume = 0;
+        fadeTo(1, heroVideo, 1.0);
+      }
+      /* If not yet unlocked, unlockAudio() will handle it on first gesture */
     }
 
     /* ════ VIDEO PLAYBACK (visual loop — must keep running always) ════ */
+    /* Video starts muted so the visual loop always autoplays.
+       Audio is handled separately via unlockAudio().            */
     function attemptVideoPlay() {
+      heroVideo.muted = true;
       heroVideo.play().catch(() => {
         const r = () => {
           heroVideo.play().catch(() => {});
@@ -571,7 +609,7 @@
 
     function openOverlay(yt, desc) {
       modalOpen = true;
-      if (!userMuted) fadeTo(0.2, heroVideo, 0.4);
+      if (audioUnlocked && !userMuted) fadeTo(0.2, heroVideo, 0.4);
       overlayDesc.innerHTML = `<p>${desc}</p>`;
       overlay.classList.add('open');
       overlayVideo.innerHTML = `
@@ -582,7 +620,7 @@
           </svg>
         </div>`;
       document.getElementById('yt-placeholder').addEventListener('click', () => {
-        if (!userMuted) fadeTo(0, heroVideo, 0.4);
+        if (audioUnlocked && !userMuted) fadeTo(0, heroVideo, 0.4);
         overlayVideo.innerHTML = `<iframe src="${yt}?autoplay=1" frameborder="0"
           allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
           allowfullscreen></iframe>`;
@@ -593,7 +631,7 @@
       modalOpen = false;
       overlay.classList.remove('open');
       overlayVideo.innerHTML = '';
-      if (!userMuted) fadeTo(1, heroVideo, 0.5);
+      if (audioUnlocked && !userMuted) fadeTo(1, heroVideo, 0.5);
     }
 
     overlayClose.addEventListener('click', closeOverlay);
