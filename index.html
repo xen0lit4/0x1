@@ -335,11 +335,6 @@
     let userMuted = false;
     let modalOpen = false;
 
-    /* ── video loop crossfade ── */
-    let videoDuration = 0;
-    let loopFading    = false;
-    const LOOP_XFADE  = 0.5;
-
     /* ════ generic ramp ════ */
     function fadeTo(target, obj, duration, onDone) {
       const diff  = target - obj.volume;
@@ -360,65 +355,43 @@
       audioToggle.textContent = on ? '[ audio on ]' : '[ audio off ]';
     }
 
-    /* ════ VIDEO LOOP CROSSFADE ════ */
-    heroVideo.addEventListener('loadedmetadata', () => {
-      videoDuration = heroVideo.duration;
-    });
-
-    heroVideo.addEventListener('timeupdate', () => {
-      if (phase !== 'main' || modalOpen || videoDuration === 0 || loopFading) return;
-      const remaining = videoDuration - heroVideo.currentTime;
-      if (remaining <= LOOP_XFADE) {
-        loopFading = true;
-        fadeTo(0, heroVideo, remaining, () => {
-          const poll = setInterval(() => {
-            if (heroVideo.currentTime < LOOP_XFADE) {
-              clearInterval(poll);
-              const target = userMuted ? 0 : 1;
-              fadeTo(target, heroVideo, LOOP_XFADE, () => { loopFading = false; });
-            }
-          }, 16);
-        });
-      }
-    });
-
-    /* ════ INTRO AUDIO ════ */
+    /* ════ INTRO AUDIO ════
+       We do NOT pre-play the mp3 muted — Android blocks even that.
+       Instead we track when the animation started and seek to the
+       correct position on first gesture, so it stays in sync.      */
     const introAudio   = new Audio('_assets/main.mp3');
     introAudio.loop    = false;
     introAudio.preload = 'auto';
+    introAudio.volume  = 1;
+    introAudio.muted   = false;
 
-    /* Start muted — muted autoplay is always allowed by browsers.
-       The audio is playing from t=0 in sync with the animation.
-       We just can't be heard yet until a gesture unlocks audio.   */
-    introAudio.muted  = true;
-    introAudio.volume = 1;
+    /* Timestamp when the scramble animation began (set in scrambleTick) */
+    let animStartTime = null;
 
-    /* Keep video silent during intro */
+    /* Keep video muted — it's purely visual, audio comes from introAudio / heroVideo audio track */
     heroVideo.muted  = true;
-    heroVideo.volume = 1;
+    heroVideo.volume = 0;
 
-    /* Has the user ever interacted? Needed to unlock audio context. */
     let audioUnlocked = false;
 
-    /* Called on first ever gesture — unmutes whichever source is active */
+    /* Called on first ever gesture */
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
 
-      /* Swap prompt → toggle */
       audioPrompt.classList.add('hidden');
       audioToggle.classList.add('visible');
 
       if (!userMuted) {
         if (phase === 'intro') {
-          /* On mobile, muted autoplay doesn't carry audio permission.
-             Call play() synchronously inside this gesture handler —
-             that's what iOS Safari requires to unlock audio.         */
-          introAudio.muted  = false;
+          /* Seek mp3 to match animation elapsed time so it's in sync */
+          const elapsed = animStartTime ? (performance.now() - animStartTime) / 1000 : 0;
+          introAudio.currentTime = Math.min(elapsed, introAudio.duration || elapsed);
           introAudio.volume = 0;
           introAudio.play().catch(() => {});
-          fadeTo(1, introAudio, 0.6);
+          fadeTo(1, introAudio, 0.5);
         } else {
+          /* Already in main phase — unmute video audio */
           heroVideo.muted  = false;
           heroVideo.volume = 0;
           heroVideo.play().catch(() => {});
@@ -440,66 +413,57 @@
 
     /* ════ TOGGLE ════ */
     audioToggle.addEventListener('click', () => {
-      /* If not yet unlocked, the unlockAudio handler fires first
-         (same click), so by the time we get here audioUnlocked=true */
       userMuted = !userMuted;
       updateIcon(!userMuted);
 
-      if (!audioUnlocked) return; // nothing audible yet — just track preference
+      if (!audioUnlocked) return;
 
       if (phase === 'intro') {
         if (userMuted) {
-          fadeTo(0, introAudio, 0.4, () => { introAudio.muted = true; });
+          fadeTo(0, introAudio, 0.4, () => { introAudio.pause(); });
         } else {
-          introAudio.muted = false;
+          const elapsed = animStartTime ? (performance.now() - animStartTime) / 1000 : 0;
+          introAudio.currentTime = Math.min(elapsed, introAudio.duration || elapsed);
+          introAudio.volume = 0;
+          introAudio.play().catch(() => {});
           fadeTo(1, introAudio, 0.4);
         }
       } else {
-        const target = userMuted ? 0 : (modalOpen ? 0.2 : 1);
-        if (!userMuted) heroVideo.muted = false;
-        if (!loopFading) {
-          fadeTo(target, heroVideo, 0.4, () => { if (userMuted) heroVideo.muted = true; });
+        if (userMuted) {
+          fadeTo(0, heroVideo, 0.4, () => { heroVideo.muted = true; });
+        } else {
+          heroVideo.muted  = false;
+          heroVideo.volume = 0;
+          fadeTo(modalOpen ? 0.2 : 1, heroVideo, 0.4);
         }
       }
     });
 
-    /* Toggle starts hidden — prompt is shown instead until first gesture */
-
-    /* ── Start intro audio — called once scramble begins ── */
+    /* ── Start intro audio tracking — called once scramble begins ── */
     function startIntroAudio() {
-      introAudio.currentTime = 0;
-      introAudio.play().catch(() => {
-        /* Extremely rare: even muted autoplay blocked.
-           Will still unlock on first gesture via unlockAudio. */
-      });
+      /* Just record the start time — actual play() waits for gesture */
+      animStartTime = performance.now();
     }
 
     /* ════ TRANSITION: mp3 out → video in ════ */
     function transitionToMainAudio() {
       phase = 'main';
 
-      /* Fade out and stop intro mp3 */
-      if (!introAudio.muted) {
-        fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
-      } else {
-        introAudio.pause();
-        introAudio.currentTime = 0;
-      }
+      /* Stop intro mp3 */
+      fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
 
-      /* Video visual loop is already running muted.
-         If audio is unlocked and user hasn't muted, unmute video. */
-      heroVideo.play().catch(() => {});
+      /* Unmute video audio if already unlocked */
       if (audioUnlocked && !userMuted) {
         heroVideo.muted  = false;
         heroVideo.volume = 0;
         fadeTo(1, heroVideo, 1.0);
       }
-      /* If not yet unlocked, unlockAudio() will handle it on first gesture */
+      /* If not yet unlocked, unlockAudio() handles it on first gesture */
     }
 
-    /* ════ VIDEO PLAYBACK (visual loop — must keep running always) ════ */
-    /* Video starts muted so the visual loop always autoplays.
-       Audio is handled separately via unlockAudio().            */
+    /* ════ VIDEO PLAYBACK — purely visual, always muted, native loop ════
+       Removed crossfade logic — it caused the freeze on mobile.
+       Native loop on a pre-encoded seamless video is frame-perfect.    */
     function attemptVideoPlay() {
       heroVideo.muted = true;
       heroVideo.play().catch(() => {
