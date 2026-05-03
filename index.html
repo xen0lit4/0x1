@@ -212,7 +212,7 @@
 
     /* ─── AUDIO PROMPT (pre-unlock) ── */
     #audio-prompt {
-      position: fixed; bottom: 28px; left: 30px;
+      position: fixed; bottom: 28px; right: 30px;
       z-index: 100000;
       font-family: 'Roboto Mono', monospace; font-weight: 300;
       font-size: 10px; letter-spacing: 0.25em; text-transform: lowercase;
@@ -230,7 +230,7 @@
 
     /* ─── AUDIO TOGGLE (post-unlock) ── */
     #audio-toggle {
-      position: fixed; bottom: 28px; left: 30px;
+      position: fixed; bottom: 28px; right: 30px;
       z-index: 100000;
       font-family: 'Roboto Mono', monospace; font-weight: 300;
       font-size: 10px; letter-spacing: 0.25em; text-transform: lowercase;
@@ -411,12 +411,17 @@
 
       if (!userMuted) {
         if (phase === 'intro') {
-          introAudio.muted = false;
+          /* On mobile, muted autoplay doesn't carry audio permission.
+             Call play() synchronously inside this gesture handler —
+             that's what iOS Safari requires to unlock audio.         */
+          introAudio.muted  = false;
           introAudio.volume = 0;
+          introAudio.play().catch(() => {});
           fadeTo(1, introAudio, 0.6);
         } else {
-          heroVideo.muted = false;
+          heroVideo.muted  = false;
           heroVideo.volume = 0;
+          heroVideo.play().catch(() => {});
           fadeTo(modalOpen ? 0.2 : 1, heroVideo, 0.6);
         }
         updateIcon(true);
