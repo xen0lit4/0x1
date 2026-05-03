@@ -210,20 +210,38 @@
       font-weight: 700; animation: blinkRedBg 1.1s step-start infinite;
     }
 
-    /* ─── AUDIO TOGGLE ── */
-    #audio-toggle {
-      position: fixed; bottom: 30px; right: 30px;
+    /* ─── AUDIO PROMPT (pre-unlock) ── */
+    #audio-prompt {
+      position: fixed; bottom: 28px; left: 30px;
       z-index: 100000;
-      width: 24px; height: 24px;
-      display: flex; align-items: center; justify-content: center;
-      background: none; border: none; padding: 0;
+      font-family: 'Roboto Mono', monospace; font-weight: 300;
+      font-size: 10px; letter-spacing: 0.25em; text-transform: lowercase;
+      color: rgba(237,236,236,0.5);
+      pointer-events: none;
+      animation: promptBlink 2s ease-in-out infinite;
       opacity: 0; transition: opacity 0.5s ease;
+    }
+    #audio-prompt.visible { opacity: 1; }
+    #audio-prompt.hidden  { opacity: 0 !important; animation: none; }
+    @keyframes promptBlink {
+      0%,100% { opacity: 0.15; }
+      50%     { opacity: 0.6;  }
+    }
+
+    /* ─── AUDIO TOGGLE (post-unlock) ── */
+    #audio-toggle {
+      position: fixed; bottom: 28px; left: 30px;
+      z-index: 100000;
+      font-family: 'Roboto Mono', monospace; font-weight: 300;
+      font-size: 10px; letter-spacing: 0.25em; text-transform: lowercase;
+      color: rgba(237,236,236,0.45);
+      background: none; border: none; padding: 0;
+      opacity: 0; transition: opacity 0.5s ease, color 0.2s;
       pointer-events: none;
     }
     #audio-toggle.visible { opacity: 1; pointer-events: all; }
+    #audio-toggle:hover   { color: rgba(237,236,236,0.85); }
     @media (pointer: fine) { #audio-toggle { cursor: none; } }
-    #audio-toggle svg { display: block; transition: opacity 0.2s; }
-    #audio-toggle:hover svg { opacity: 0.55; }
 
     /* ─── MOBILE ── */
     @media (max-width: 900px) {
@@ -288,23 +306,11 @@
     </div>
   </div>
 
-  <!-- AUDIO TOGGLE -->
-  <div id="audio-toggle">
-    <svg id="icon-on" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-         fill="none" stroke="rgba(237,236,236,0.65)" stroke-width="1.6"
-         stroke-linecap="round" stroke-linejoin="round">
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-    </svg>
-    <svg id="icon-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-         fill="none" stroke="rgba(237,236,236,0.3)" stroke-width="1.6"
-         stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-      <line x1="23" y1="9" x2="17" y2="15"/>
-      <line x1="17" y1="9" x2="23" y2="15"/>
-    </svg>
-  </div>
+  <!-- AUDIO PROMPT (shown before first interaction) -->
+  <div id="audio-prompt" class="visible">[ click for audio ]</div>
+
+  <!-- AUDIO TOGGLE (shown after unlock) -->
+  <div id="audio-toggle"></div>
 
   <script>
     /* ══════════════════════════════════════════════════════════════
@@ -324,8 +330,6 @@
 
     const heroVideo   = document.getElementById('hero-video');
     const audioToggle = document.getElementById('audio-toggle');
-    const iconOn      = document.getElementById('icon-on');
-    const iconOff     = document.getElementById('icon-off');
 
     let phase     = 'intro';  // 'intro' | 'main'
     let userMuted = false;
@@ -350,9 +354,10 @@
       })();
     }
 
+    const audioPrompt = document.getElementById('audio-prompt');
+
     function updateIcon(on) {
-      iconOn.style.display  = on ? 'block' : 'none';
-      iconOff.style.display = on ? 'none'  : 'block';
+      audioToggle.textContent = on ? '[ audio on ]' : '[ audio off ]';
     }
 
     /* ════ VIDEO LOOP CROSSFADE ════ */
@@ -399,6 +404,10 @@
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
+
+      /* Swap prompt → toggle */
+      audioPrompt.classList.add('hidden');
+      audioToggle.classList.add('visible');
 
       if (!userMuted) {
         if (phase === 'intro') {
@@ -449,11 +458,7 @@
       }
     });
 
-    /* Show toggle immediately */
-    audioToggle.classList.add('visible');
-    /* Icon shows "on" — audio IS playing, just muted by browser policy.
-       First click will unlock it. */
-    updateIcon(true);
+    /* Toggle starts hidden — prompt is shown instead until first gesture */
 
     /* ── Start intro audio — called once scramble begins ── */
     function startIntroAudio() {
@@ -653,7 +658,7 @@
       });
       document.addEventListener('mouseleave', () => { cursor.classList.add('invisible'); clearTimeout(idleTimer); });
       document.addEventListener('mouseenter', resetIdle);
-      document.querySelectorAll('a,.work-card,.overlay-close,.qr-link,#audio-toggle').forEach(el => {
+      document.querySelectorAll('a,.work-card,.overlay-close,.qr-link,#audio-toggle,#audio-prompt').forEach(el => {
         el.addEventListener('mouseenter', () => cursor.classList.add('expand'));
         el.addEventListener('mouseleave', () => cursor.classList.remove('expand'));
       });
