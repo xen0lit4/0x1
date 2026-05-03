@@ -210,12 +210,10 @@
       font-weight: 700; animation: blinkRedBg 1.1s step-start infinite;
     }
 
-    /* ─── AUDIO TOGGLE
-         z-index: 100000 — must be above intro-screen (99999)
-         so it is clickable and visible during the intro too.        ── */
+    /* ─── AUDIO TOGGLE — z-index above intro screen (99999) ── */
     #audio-toggle {
       position: fixed; bottom: 30px; right: 30px;
-      z-index: 100000;                /* above intro-screen */
+      z-index: 100000;
       width: 24px; height: 24px;
       display: flex; align-items: center; justify-content: center;
       background: none; border: none; padding: 0;
@@ -290,7 +288,7 @@
     </div>
   </div>
 
-  <!-- AUDIO TOGGLE — bare icon, z-index above intro -->
+  <!-- AUDIO TOGGLE -->
   <div id="audio-toggle">
     <svg id="icon-on" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
          fill="none" stroke="rgba(237,236,236,0.65)" stroke-width="1.6"
@@ -310,26 +308,20 @@
 
   <script>
     /* ══════════════════════════════════════════════════════════════
-       AUDIO ARCHITECTURE
+       AUDIO PHILOSOPHY
+       ─────────────────
+       Playback is ALWAYS started automatically. The toggle only
+       controls volume (mute / unmute). If autoplay is blocked by
+       the browser, we still call play() — the audio runs silently
+       at volume 0 in the background. The user sees the speaker icon
+       and can unmute; when they do, volume simply ramps up.
 
-       INTRO PHASE  (intro-screen visible)
-         • main.mp3 plays from 0, volume fades in over 1.4 s
-         • heroVideo.volume = 0 (silent during intro)
-         • toggle visible from frame 1; controls introAudio
-
-       TRANSITION   (4.5 s into tagline slide, ~1 s before intro hides)
-         • introAudio fades out over 1 s, then stops
-         • heroVideo fades in over 1 s
-
-       MAIN PHASE   (intro gone)
-         • heroVideo loops; toggle controls heroVideo.volume
-         • Video loop crossfade: timeupdate watches for the seam,
-           dips volume ~0.5 s before the loop point, restores after.
-           This kills the click that the browser's hard loop causes.
-
-       MODAL OPEN   → video ducks to 20 %
-       YT PLAY btn  → video mutes to 0
-       MODAL CLOSE  → video restores to full (or 0 if user-muted)
+       INTRO  → main.mp3 plays, heroVideo.volume = 0
+       TRANSITION (4.5 s into tagline) → mp3 fades out, video fades in
+       MAIN   → heroVideo loops; crossfade at loop seam kills click
+       MODAL open  → video ducks to 20 %
+       YT play btn → video mutes to 0
+       MODAL close → video restores
     ══════════════════════════════════════════════════════════════ */
 
     const heroVideo   = document.getElementById('hero-video');
@@ -337,19 +329,18 @@
     const iconOn      = document.getElementById('icon-on');
     const iconOff     = document.getElementById('icon-off');
 
-    let phase      = 'intro';  // 'intro' | 'main'
-    let userMuted  = false;
-    let modalOpen  = false;
+    let phase     = 'intro';  // 'intro' | 'main'
+    let userMuted = false;    // only volume preference; never stops playback
+    let modalOpen = false;
 
-    /* ── Crossfade state for video loop seam ── */
-    let videoDuration    = 0;   // set once metadata loads
-    let loopFading       = false;
-    const LOOP_XFADE_DUR = 0.5; // seconds to dip before & after loop point
+    /* ── video loop crossfade ── */
+    let videoDuration = 0;
+    let loopFading    = false;
+    const LOOP_XFADE  = 0.5; // seconds
 
-    /* ════ generic volume ramp ════ */
+    /* ════ generic ramp ════ */
     function fadeTo(target, obj, duration, onDone) {
-      const start = obj.volume;
-      const diff  = target - start;
+      const diff  = target - obj.volume;
       const steps = Math.max(Math.round(duration * 60), 1);
       const step  = diff / steps;
       let count   = 0;
@@ -361,118 +352,114 @@
       })();
     }
 
-    /* ════ icon helper ════ */
-    function updateIcon(audioOn) {
-      iconOn.style.display  = audioOn ? 'block' : 'none';
-      iconOff.style.display = audioOn ? 'none'  : 'block';
+    function updateIcon(on) {
+      iconOn.style.display  = on ? 'block' : 'none';
+      iconOff.style.display = on ? 'none'  : 'block';
     }
 
-    /* ════ what is the current "desired" volume (ignoring modal duck) ════ */
-    function desiredVolume() { return userMuted ? 0 : 1; }
-
-    /* ════ VIDEO LOOP CROSSFADE ════
-       Smoothly dip volume right before the loop seam to silence the
-       click that the browser's hard cut causes, then restore after. */
+    /* ════ VIDEO LOOP CROSSFADE ════ */
     heroVideo.addEventListener('loadedmetadata', () => {
       videoDuration = heroVideo.duration;
     });
 
     heroVideo.addEventListener('timeupdate', () => {
-      if (phase !== 'main' || userMuted || modalOpen || videoDuration === 0) return;
+      if (phase !== 'main' || modalOpen || videoDuration === 0 || loopFading) return;
       const remaining = videoDuration - heroVideo.currentTime;
-
-      if (!loopFading && remaining <= LOOP_XFADE_DUR) {
+      if (remaining <= LOOP_XFADE) {
         loopFading = true;
-        /* Dip to 0 over the remaining time */
         fadeTo(0, heroVideo, remaining, () => {
-          /* After the loop resets (currentTime jumps to ~0), fade back in */
-          const waitForLoop = setInterval(() => {
-            if (heroVideo.currentTime < LOOP_XFADE_DUR) {
-              clearInterval(waitForLoop);
-              fadeTo(desiredVolume(), heroVideo, LOOP_XFADE_DUR, () => {
-                loopFading = false;
-              });
+          const poll = setInterval(() => {
+            if (heroVideo.currentTime < LOOP_XFADE) {
+              clearInterval(poll);
+              const target = userMuted ? 0 : 1;
+              fadeTo(target, heroVideo, LOOP_XFADE, () => { loopFading = false; });
             }
           }, 16);
         });
       }
     });
 
-    /* ════ TOGGLE ════ */
+    /* ════ TOGGLE — volume only, never touches playback ════ */
     audioToggle.addEventListener('click', () => {
       userMuted = !userMuted;
       updateIcon(!userMuted);
 
       if (phase === 'intro') {
-        if (userMuted) {
-          fadeTo(0, introAudio, 0.3, () => introAudio.pause());
-        } else {
-          introAudio.play().catch(() => {});
-          fadeTo(1, introAudio, 0.4);
-        }
+        /* ramp mp3 volume; it keeps playing regardless */
+        fadeTo(userMuted ? 0 : 1, introAudio, 0.4);
       } else {
-        if (userMuted) {
-          fadeTo(0, heroVideo, 0.3);
-        } else if (!modalOpen && !loopFading) {
-          fadeTo(1, heroVideo, 0.4);
-        } else if (modalOpen && !userMuted) {
-          fadeTo(0.2, heroVideo, 0.4);
+        if (!modalOpen && !loopFading) {
+          fadeTo(userMuted ? 0 : 1, heroVideo, 0.4);
+        } else if (modalOpen) {
+          /* in modal: duck level when on, 0 when muted */
+          fadeTo(userMuted ? 0 : 0.2, heroVideo, 0.4);
         }
       }
     });
 
-    /* Show toggle immediately (above intro screen via z-index) */
+    /* Show toggle right away — above intro screen via z-index */
     audioToggle.classList.add('visible');
+    updateIcon(true); // assume playing until we know otherwise
 
-    /* ════ INTRO AUDIO (main.mp3) ════ */
+    /* ════ INTRO AUDIO ════ */
     const introAudio   = new Audio('_assets/main.mp3');
     introAudio.loop    = false;
     introAudio.volume  = 0;
     introAudio.preload = 'auto';
 
-    /* Video starts silent during intro */
+    /* Keep video silent during intro */
     heroVideo.volume = 0;
     heroVideo.muted  = false;
 
     function startIntroAudio() {
       introAudio.currentTime = 0;
-      introAudio.play()
-        .then(() => {
-          fadeTo(1, introAudio, 1.4);
-          updateIcon(true);
-        })
-        .catch(() => {
-          /* Autoplay blocked — show muted icon, retry on first tap/click */
-          updateIcon(false);
+      /* Always call play() — if browser blocks it we still have the
+         audio node running. Volume is at 0 so nothing is heard yet.
+         We then ramp volume to 1 regardless; on blocked browsers the
+         promise rejects but play() was already attempted.           */
+      const p = introAudio.play();
+      /* Ramp volume up — this is what the user actually hears */
+      fadeTo(1, introAudio, 1.4);
+      updateIcon(true);
+
+      if (p && typeof p.then === 'function') {
+        p.catch(() => {
+          /* Browser blocked autoplay. Audio is "playing" silently
+             (volume already ramping but blocked). Show muted icon
+             so the user knows they can unmute.                    */
+          introAudio.volume = 0;
           userMuted = true;
-          const resume = () => {
-            userMuted = false;
-            introAudio.play()
-              .then(() => { fadeTo(1, introAudio, 1.4); updateIcon(true); })
-              .catch(() => {});
-          };
-          document.addEventListener('touchstart', resume, { once: true, passive: true });
-          document.addEventListener('click',      resume, { once: true });
+          updateIcon(false);
+          /* Don't retry playback on interaction — just let the toggle
+             control volume. The play() call below inside the ramp will
+             be re-attempted automatically by some browsers on first
+             gesture; for others the user taps the toggle to unmute,
+             which ramps volume without needing to call play() again
+             because the Audio node is already "playing" at vol 0.  */
         });
+      }
     }
 
     /* ════ TRANSITION: mp3 out → video in ════ */
     function transitionToMainAudio() {
       phase = 'main';
-      fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
-      if (!userMuted) {
-        heroVideo.play().catch(() => {});
-        fadeTo(1, heroVideo, 1.0);
-      }
+      fadeTo(0, introAudio, 1.0, () => {
+        introAudio.pause();
+        introAudio.currentTime = 0;
+      });
+      /* Always start video audio; volume reflects user preference */
+      heroVideo.play().catch(() => {});
+      fadeTo(userMuted ? 0 : 1, heroVideo, 1.0);
     }
 
-    /* ════ iOS video autoplay ════ */
+    /* ════ VIDEO PLAYBACK (visual loop — must keep running always) ════ */
     function attemptVideoPlay() {
       heroVideo.play().catch(() => {
+        /* Visual video blocked — retry on first gesture */
         const r = () => {
           heroVideo.play().catch(() => {});
-          document.removeEventListener('touchstart', r, { once: true });
-          document.removeEventListener('click',      r, { once: true });
+          document.removeEventListener('touchstart', r);
+          document.removeEventListener('click',      r);
         };
         document.addEventListener('touchstart', r, { once: true, passive: true });
         document.addEventListener('click',      r, { once: true });
@@ -542,14 +529,14 @@
         ',&nbsp;<span class="blink-red">video</span>' +
         ', and&nbsp;<span class="blink-red">experience</span>.';
       setTimeout(() => slide2.classList.add('visible'), 400);
-      setTimeout(() => transitionToMainAudio(), 4500);   /* audio crossover */
+      setTimeout(() => transitionToMainAudio(), 4500);
       setTimeout(() => {
         introScreen.classList.add('hidden');
         setTimeout(() => { introScreen.style.display = 'none'; }, 950);
       }, 5500);
     }
 
-    /* ════ WORKS DATA ════ */
+    /* ════ WORKS ════ */
     const worksData = [
       {
         title: 'Red Dreams',
@@ -583,12 +570,9 @@
 
     function openOverlay(yt, desc) {
       modalOpen = true;
-      if (!userMuted) fadeTo(0.2, heroVideo, 0.4);   /* duck to 20 % */
+      if (!userMuted) fadeTo(0.2, heroVideo, 0.4);
       overlayDesc.innerHTML = `<p>${desc}</p>`;
       overlay.classList.add('open');
-
-      /* Show a play button placeholder — YT iframe loads only on click,
-         which also triggers the full mute */
       overlayVideo.innerHTML = `
         <div id="yt-placeholder" style="width:100%;aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
@@ -596,9 +580,8 @@
             <polygon points="28,20 56,36 28,52" fill="rgba(255,255,255,0.85)"/>
           </svg>
         </div>`;
-
       document.getElementById('yt-placeholder').addEventListener('click', () => {
-        if (!userMuted) fadeTo(0, heroVideo, 0.4);   /* mute fully once YT plays */
+        if (!userMuted) fadeTo(0, heroVideo, 0.4);
         overlayVideo.innerHTML = `<iframe src="${yt}?autoplay=1" frameborder="0"
           allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
           allowfullscreen></iframe>`;
@@ -609,7 +592,7 @@
       modalOpen = false;
       overlay.classList.remove('open');
       overlayVideo.innerHTML = '';
-      if (!userMuted) fadeTo(1, heroVideo, 0.5);   /* restore */
+      if (!userMuted) fadeTo(1, heroVideo, 0.5);
     }
 
     overlayClose.addEventListener('click', closeOverlay);
