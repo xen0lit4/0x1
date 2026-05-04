@@ -167,6 +167,22 @@
       margin-bottom: 6px; text-shadow: 0 0 8px rgba(0,0,0,1);
     }
 
+    /* ─── COMING SOON CARD ── */
+    .work-card-coming {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: #0a0a0a;
+    }
+    .coming-soon-label {
+      font-family: 'Roboto Mono', monospace; font-weight: 300;
+      font-size: 11px; letter-spacing: 0.4em; text-transform: lowercase;
+      color: rgba(237,236,236,0.2);
+      animation: comingBlink 2.5s ease-in-out infinite;
+    }
+    @keyframes comingBlink {
+      0%,100% { opacity: 0.4; } 50% { opacity: 1; }
+    }
+
     /* ─── CONTACT ── */
     .works-contact {
       padding: 72px 0 calc(72px + env(safe-area-inset-bottom,0px));
@@ -310,19 +326,18 @@
   <div id="audio-prompt" class="visible">[ click for audio ]</div>
 
   <!-- AUDIO TOGGLE (shown after unlock) -->
-  <div id="audio-toggle"></div>
+  <button id="audio-toggle"></button>
 
   <script>
     /* ══════════════════════════════════════════════════════════════
        AUDIO PHILOSOPHY
        ─────────────────
-       The toggle only controls volume (mute / unmute).
-       If autoplay is blocked, we queue an unlock on first gesture —
-       the icon stays "on" so the user knows audio is intended.
+       Audio is ON by default. First gesture unlocks and starts it.
+       The toggle button lets the user turn it OFF (or back on).
 
-       INTRO  → main.mp3 plays, heroVideo.volume = 0
-       TRANSITION (4.5 s into tagline) → mp3 fades out, video fades in
-       MAIN   → heroVideo loops; crossfade at loop seam kills click
+       INTRO  → main.mp3 plays (seeked to sync with animation)
+       TRANSITION (4.5 s into tagline) → mp3 fades out, video audio fades in
+       MAIN   → heroVideo loops with audio
        MODAL open  → video ducks to 20 %
        YT play btn → video mutes to 0
        MODAL close → video restores
@@ -330,12 +345,14 @@
 
     const heroVideo   = document.getElementById('hero-video');
     const audioToggle = document.getElementById('audio-toggle');
+    const audioPrompt = document.getElementById('audio-prompt');
 
-    let phase     = 'intro';  // 'intro' | 'main'
-    let userMuted = false;
-    let modalOpen = false;
+    let phase       = 'intro';  // 'intro' | 'main'
+    let userMuted   = false;    // user preference — starts unmuted
+    let modalOpen   = false;
+    let audioUnlocked = false;
 
-    /* ════ generic ramp ════ */
+    /* ════ generic volume ramp ════ */
     function fadeTo(target, obj, duration, onDone) {
       const diff  = target - obj.volume;
       const steps = Math.max(Math.round(duration * 60), 1);
@@ -349,57 +366,50 @@
       })();
     }
 
-    const audioPrompt = document.getElementById('audio-prompt');
-
-    function updateIcon(on) {
-      audioToggle.textContent = on ? '[ audio on ]' : '[ audio off ]';
+    function updateIcon() {
+      audioToggle.textContent = userMuted ? '[ audio off ]' : '[ audio on ]';
     }
 
-    /* ════ INTRO AUDIO ════
-       We do NOT pre-play the mp3 muted — Android blocks even that.
-       Instead we track when the animation started and seek to the
-       correct position on first gesture, so it stays in sync.      */
+    /* ════ INTRO AUDIO ════ */
     const introAudio   = new Audio('_assets/main.mp3');
     introAudio.loop    = false;
     introAudio.preload = 'auto';
-    introAudio.volume  = 1;
+    introAudio.volume  = 0;
     introAudio.muted   = false;
 
-    /* Timestamp when the scramble animation began (set in scrambleTick) */
+    /* Timestamp when the scramble animation began */
     let animStartTime = null;
 
-    /* Keep video muted — it's purely visual, audio comes from introAudio / heroVideo audio track */
+    /* Keep video muted during intro — audio comes from introAudio */
     heroVideo.muted  = true;
     heroVideo.volume = 0;
 
-    let audioUnlocked = false;
-
-    /* Called on first ever gesture */
+    /* Called on first ever gesture — ALWAYS starts audio (user muted = false by default) */
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
 
+      /* Hide prompt, show toggle */
       audioPrompt.classList.add('hidden');
       audioToggle.classList.add('visible');
+      updateIcon();
 
       if (!userMuted) {
         if (phase === 'intro') {
-          /* Seek mp3 to match animation elapsed time so it's in sync */
+          /* Seek mp3 to match animation elapsed time */
           const elapsed = animStartTime ? (performance.now() - animStartTime) / 1000 : 0;
           introAudio.currentTime = Math.min(elapsed, introAudio.duration || elapsed);
           introAudio.volume = 0;
-          introAudio.play().catch(() => {});
-          fadeTo(1, introAudio, 0.5);
+          introAudio.play().then(() => {
+            fadeTo(1, introAudio, 0.5);
+          }).catch(() => {});
         } else {
-          /* Already in main phase — unmute video audio */
+          /* Already in main phase — start video audio */
           heroVideo.muted  = false;
           heroVideo.volume = 0;
           heroVideo.play().catch(() => {});
           fadeTo(modalOpen ? 0.2 : 1, heroVideo, 0.6);
         }
-        updateIcon(true);
-      } else {
-        updateIcon(false);
       }
 
       document.removeEventListener('click',      unlockAudio);
@@ -411,10 +421,11 @@
     document.addEventListener('touchstart', unlockAudio, { passive: true });
     document.addEventListener('keydown',    unlockAudio, { passive: true });
 
-    /* ════ TOGGLE ════ */
-    audioToggle.addEventListener('click', () => {
+    /* ════ TOGGLE — turn audio on/off after unlock ════ */
+    audioToggle.addEventListener('click', (e) => {
+      e.stopPropagation(); // don't re-trigger unlockAudio
       userMuted = !userMuted;
-      updateIcon(!userMuted);
+      updateIcon();
 
       if (!audioUnlocked) return;
 
@@ -439,31 +450,24 @@
       }
     });
 
-    /* ── Start intro audio tracking — called once scramble begins ── */
+    /* ── Record when scramble animation begins ── */
     function startIntroAudio() {
-      /* Just record the start time — actual play() waits for gesture */
       animStartTime = performance.now();
     }
 
-    /* ════ TRANSITION: mp3 out → video in ════ */
+    /* ════ TRANSITION: mp3 out → video audio in ════ */
     function transitionToMainAudio() {
       phase = 'main';
-
-      /* Stop intro mp3 */
       fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
 
-      /* Unmute video audio if already unlocked */
       if (audioUnlocked && !userMuted) {
         heroVideo.muted  = false;
         heroVideo.volume = 0;
         fadeTo(1, heroVideo, 1.0);
       }
-      /* If not yet unlocked, unlockAudio() handles it on first gesture */
     }
 
-    /* ════ VIDEO PLAYBACK — purely visual, always muted, native loop ════
-       Removed crossfade logic — it caused the freeze on mobile.
-       Native loop on a pre-encoded seamless video is frame-perfect.    */
+    /* ════ VIDEO PLAYBACK — purely visual, always muted until main phase ════ */
     function attemptVideoPlay() {
       heroVideo.muted = true;
       heroVideo.play().catch(() => {
@@ -498,9 +502,6 @@
     function scrambleTick(now) {
       if (!startTime) {
         startTime = now;
-        /* ── FIX: always call startIntroAudio directly here.
-           No readyState check — play() buffers automatically,
-           and the gesture-unlock handles blocked autoplay.    ── */
         startIntroAudio();
       }
       const t       = Math.min((now - startTime) / DURATION, 1);
@@ -558,10 +559,10 @@
         description: `We created the music and sound design for "<span class="hl">Red Dreams</span>". Each tone is <span class="hl">raw</span>, <span class="hl">vague</span> and <span class="hl">enigmatic</span>. The result is an experimental soundscape, simple yet open to endless interpretation.`
       },
       {
-        title: 'The Last Of Us',
-        thumbnail: '_assets/TheLastOfUsPreview.png',
-        youtube: 'https://www.youtube.com/embed/-JO-2nbI2G8',
-        description: `This is the alternative soundtrack we made for the TV series <span class="hl">The Last of Us</span>. The raw sound of the guitar and voice capture the atmosphere, recorded as if echoing a real-life moment from the series. <span class="hl">The song was recorded in an abandoned house in Toronto, Ontario</span>.`
+        title: null, // coming soon
+        thumbnail: null,
+        youtube: null,
+        description: null
       }
     ];
 
@@ -570,8 +571,27 @@
       const card = document.createElement('div');
       card.className = 'work-card reveal';
       card.style.transitionDelay = `${i*0.08}s`;
-      card.innerHTML = `<div class="work-card-thumb" style="background-image:url('${work.thumbnail}')"></div><div class="work-card-overlay"><div class="work-card-num">0${i+1}</div><div class="work-card-title">${work.title}</div></div>`;
-      if (work.youtube) card.addEventListener('click', () => openOverlay(work.youtube, work.description));
+
+      if (work.youtube) {
+        // Normal clickable card
+        card.innerHTML = `
+          <div class="work-card-thumb" style="background-image:url('${work.thumbnail}')"></div>
+          <div class="work-card-overlay">
+            <div class="work-card-num">0${i+1}</div>
+            <div class="work-card-title">${work.title}</div>
+          </div>`;
+        card.addEventListener('click', () => openOverlay(work.youtube, work.description));
+      } else {
+        // Coming soon card
+        card.innerHTML = `
+          <div class="work-card-coming">
+            <div class="coming-soon-label">coming soon</div>
+          </div>
+          <div class="work-card-overlay" style="background:none;">
+            <div class="work-card-num" style="color:rgba(255,255,255,0.12);">0${i+1}</div>
+          </div>`;
+      }
+
       grid.appendChild(card);
     });
 
