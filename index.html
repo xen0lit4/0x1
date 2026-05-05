@@ -42,12 +42,8 @@
       position: fixed; inset: 0; background: #000;
       z-index: 999999;
       display: flex; align-items: center; justify-content: center;
-      opacity: 0;
-      animation: gateFadeIn 1.2s cubic-bezier(0.4,0,0.2,1) 0.3s forwards;
-    }
-    @keyframes gateFadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+      /* FIX: no fade-in — gate is immediately visible, hiding video */
+      opacity: 1;
     }
     #enter-gate.leaving {
       opacity: 1;
@@ -63,7 +59,9 @@
       position: relative;
       font-family: 'Roboto Mono', monospace; font-weight: 300;
       font-size: clamp(10px, 1.4vw, 16px);
-      letter-spacing: 0.45em; text-transform: uppercase;
+      letter-spacing: 0.45em;
+      /* FIX: lowercase instead of uppercase */
+      text-transform: lowercase;
       color: rgba(237,236,236,0.35);
       background: none; border: none; padding: 0;
       cursor: pointer;
@@ -87,7 +85,7 @@
       z-index: 99999;
       display: flex; align-items: center; justify-content: center;
       flex-direction: column; overflow: hidden;
-      opacity: 0; pointer-events: none; /* hidden until gate dismissed */
+      opacity: 0; pointer-events: none;
     }
     #intro-screen.active { opacity: 1; pointer-events: all; }
     #intro-screen.hidden {
@@ -283,7 +281,7 @@
 
   <!-- ENTER GATE -->
   <div id="enter-gate">
-    <button id="enter-btn"><span class="enter-letter">E</span><span class="enter-letter">N</span><span class="enter-letter">T</span><span class="enter-letter">E</span><span class="enter-letter">R</span></button>
+    <button id="enter-btn"><span class="enter-letter">e</span><span class="enter-letter">n</span><span class="enter-letter">t</span><span class="enter-letter">e</span><span class="enter-letter">r</span></button>
   </div>
 
   <!-- INTRO -->
@@ -341,26 +339,12 @@
   </div>
 
   <script>
-    /* ══════════════════════════════════════════════════════════════
-       AUDIO PHILOSOPHY
-       ─────────────────
-       ENTER button is the audio unlock + animation trigger.
-       Audio is ON from the moment ENTER is clicked.
-
-       INTRO  → main.mp3 plays (seeked to sync with animation)
-       TRANSITION (4.5 s into tagline) → mp3 fades out, video audio fades in
-       MAIN   → heroVideo loops with audio
-       MODAL open  → video ducks to 20 %
-       YT play btn → video mutes to 0
-       MODAL close → video restores
-    ══════════════════════════════════════════════════════════════ */
-
     const heroVideo   = document.getElementById('hero-video');
     const enterGate   = document.getElementById('enter-gate');
     const enterBtn    = document.getElementById('enter-btn');
     const introScreen = document.getElementById('intro-screen');
 
-    let phase     = 'intro';  // 'intro' | 'main'
+    let phase     = 'intro';
     let modalOpen = false;
 
     /* ════ generic volume ramp ════ */
@@ -383,11 +367,10 @@
     introAudio.preload = 'auto';
     introAudio.volume  = 0;
 
-    /* Keep video muted during intro */
     heroVideo.muted  = true;
     heroVideo.volume = 0;
 
-    /* ════ VIDEO PLAYBACK — purely visual, muted until main phase ════ */
+    /* ════ VIDEO PLAYBACK ════ */
     function attemptVideoPlay() {
       heroVideo.muted = true;
       heroVideo.play().catch(() => {
@@ -412,20 +395,20 @@
       fadeTo(1, heroVideo, 1.0);
     }
 
-    /* ════ ENTER LETTER JITTER ════ */
+    /* ════ ENTER LETTER JITTER — FIX: reduced to ±0.6px ════ */
     (function() {
       const letters = document.querySelectorAll('.enter-letter');
       const styleEl = document.createElement('style');
       document.head.appendChild(styleEl);
 
       letters.forEach((el, i) => {
-        // unique random params per letter
-        const dur    = (2.4 + Math.random() * 2.2).toFixed(2);   // 2.4–4.6s
-        const delay  = (Math.random() * 1.8).toFixed(2);          // 0–1.8s offset
-        const x1     = ((Math.random() * 4) - 2).toFixed(2);      // –2 to +2 px
-        const y1     = ((Math.random() * 4) - 2).toFixed(2);
-        const x2     = ((Math.random() * 4) - 2).toFixed(2);
-        const y2     = ((Math.random() * 4) - 2).toFixed(2);
+        const dur    = (3.0 + Math.random() * 2.0).toFixed(2);   // slightly slower
+        const delay  = (Math.random() * 1.8).toFixed(2);
+        // FIX: reduced from ±2px down to ±0.6px
+        const x1     = ((Math.random() * 1.2) - 0.6).toFixed(2);
+        const y1     = ((Math.random() * 1.2) - 0.6).toFixed(2);
+        const x2     = ((Math.random() * 1.2) - 0.6).toFixed(2);
+        const y2     = ((Math.random() * 1.2) - 0.6).toFixed(2);
         const name   = `jitter${i}`;
 
         styleEl.sheet.insertRule(`
@@ -447,27 +430,22 @@
       });
     })();
 
-    
     let animStartTime = null;
     let introStarted  = false;
 
     function startEverything() {
-      /* Fade gate out */
       enterGate.classList.add('leaving');
       enterGate.addEventListener('animationend', () => {
         enterGate.style.display = 'none';
       }, { once: true });
 
-      /* Reveal intro screen */
       introScreen.classList.add('active');
 
-      /* Start mp3 */
       introAudio.volume = 0;
       introAudio.play().then(() => {
         fadeTo(1, introAudio, 0.5);
       }).catch(() => {});
 
-      /* Kick off scramble animation */
       animStartTime = performance.now();
       requestAnimationFrame(scrambleTick);
       introStarted = true;
@@ -518,7 +496,6 @@
         setTimeout(showTagline, 520);
       }
     }
-    /* Note: scrambleTick is NOT called here — it's called from startEverything() */
 
     function showTagline() {
       slide1.style.transition = 'opacity 0.6s ease';
