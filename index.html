@@ -37,13 +37,59 @@
     #scroll-root::-webkit-scrollbar { display: none; }
     #scroll-root { scrollbar-width: none; }
 
+    /* ─── ENTER GATE ── */
+    #enter-gate {
+      position: fixed; inset: 0; background: #000;
+      z-index: 999999;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      animation: gateFadeIn 1.2s cubic-bezier(0.4,0,0.2,1) 0.3s forwards;
+    }
+    @keyframes gateFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    #enter-gate.leaving {
+      opacity: 1;
+      animation: gateFadeOut 0.9s cubic-bezier(0.4,0,0.2,1) forwards;
+      pointer-events: none;
+    }
+    @keyframes gateFadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+
+    #enter-btn {
+      position: relative;
+      font-family: 'Roboto Mono', monospace; font-weight: 300;
+      font-size: clamp(10px, 1.4vw, 16px);
+      letter-spacing: 0.45em; text-transform: uppercase;
+      color: rgba(237,236,236,0.35);
+      background: none; border: none; padding: 0;
+      cursor: pointer;
+      transition: color 0.35s ease;
+      display: flex; gap: 0;
+    }
+    @media (pointer: fine) { #enter-btn { cursor: none; } }
+
+    #enter-btn:hover { color: rgba(237,236,236,0.9); }
+
+    .enter-letter {
+      display: inline-block;
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+    }
+
     /* ─── INTRO ── */
     #intro-screen {
       position: fixed; inset: 0; background: #000;
       z-index: 99999;
       display: flex; align-items: center; justify-content: center;
       flex-direction: column; overflow: hidden;
+      opacity: 0; pointer-events: none; /* hidden until gate dismissed */
     }
+    #intro-screen.active { opacity: 1; pointer-events: all; }
     #intro-screen.hidden {
       opacity: 0; pointer-events: none;
       transition: opacity 0.9s cubic-bezier(0.4,0,0.2,1);
@@ -226,39 +272,6 @@
       font-weight: 700; animation: blinkRedBg 1.1s step-start infinite;
     }
 
-    /* ─── AUDIO PROMPT (pre-unlock) ── */
-    #audio-prompt {
-      position: fixed; bottom: 28px; right: 30px;
-      z-index: 100000;
-      font-family: 'Roboto Mono', monospace; font-weight: 300;
-      font-size: 10px; letter-spacing: 0.25em; text-transform: lowercase;
-      color: rgba(237,236,236,0.5);
-      pointer-events: none;
-      animation: promptBlink 2s ease-in-out infinite;
-      opacity: 0; transition: opacity 0.5s ease;
-    }
-    #audio-prompt.visible { opacity: 1; }
-    #audio-prompt.hidden  { opacity: 0 !important; animation: none; }
-    @keyframes promptBlink {
-      0%,100% { opacity: 0.15; }
-      50%     { opacity: 0.6;  }
-    }
-
-    /* ─── AUDIO TOGGLE (post-unlock) ── */
-    #audio-toggle {
-      position: fixed; bottom: 28px; right: 30px;
-      z-index: 100000;
-      font-family: 'Roboto Mono', monospace; font-weight: 300;
-      font-size: 10px; letter-spacing: 0.25em; text-transform: lowercase;
-      color: rgba(237,236,236,0.45);
-      background: none; border: none; padding: 0;
-      opacity: 0; transition: opacity 0.5s ease, color 0.2s;
-      pointer-events: none;
-    }
-    #audio-toggle.visible { opacity: 1; pointer-events: all; }
-    #audio-toggle:hover   { color: rgba(237,236,236,0.85); }
-    @media (pointer: fine) { #audio-toggle { cursor: none; } }
-
     /* ─── MOBILE ── */
     @media (max-width: 900px) {
       :root { --pad-x: 24px; }
@@ -267,6 +280,11 @@
   </style>
 </head>
 <body>
+
+  <!-- ENTER GATE -->
+  <div id="enter-gate">
+    <button id="enter-btn"><span class="enter-letter">E</span><span class="enter-letter">N</span><span class="enter-letter">T</span><span class="enter-letter">E</span><span class="enter-letter">R</span></button>
+  </div>
 
   <!-- INTRO -->
   <div id="intro-screen">
@@ -322,18 +340,12 @@
     </div>
   </div>
 
-  <!-- AUDIO PROMPT (shown before first interaction) -->
-  <div id="audio-prompt" class="visible">[ click for audio ]</div>
-
-  <!-- AUDIO TOGGLE (shown after unlock) -->
-  <button id="audio-toggle"></button>
-
   <script>
     /* ══════════════════════════════════════════════════════════════
        AUDIO PHILOSOPHY
        ─────────────────
-       Audio is ON by default. First gesture unlocks and starts it.
-       The toggle button lets the user turn it OFF (or back on).
+       ENTER button is the audio unlock + animation trigger.
+       Audio is ON from the moment ENTER is clicked.
 
        INTRO  → main.mp3 plays (seeked to sync with animation)
        TRANSITION (4.5 s into tagline) → mp3 fades out, video audio fades in
@@ -344,13 +356,12 @@
     ══════════════════════════════════════════════════════════════ */
 
     const heroVideo   = document.getElementById('hero-video');
-    const audioToggle = document.getElementById('audio-toggle');
-    const audioPrompt = document.getElementById('audio-prompt');
+    const enterGate   = document.getElementById('enter-gate');
+    const enterBtn    = document.getElementById('enter-btn');
+    const introScreen = document.getElementById('intro-screen');
 
-    let phase       = 'intro';  // 'intro' | 'main'
-    let userMuted   = false;    // user preference — starts unmuted
-    let modalOpen   = false;
-    let audioUnlocked = false;
+    let phase     = 'intro';  // 'intro' | 'main'
+    let modalOpen = false;
 
     /* ════ generic volume ramp ════ */
     function fadeTo(target, obj, duration, onDone) {
@@ -366,108 +377,17 @@
       })();
     }
 
-    function updateIcon() {
-      audioToggle.textContent = userMuted ? '[ audio off ]' : '[ audio on ]';
-    }
-
     /* ════ INTRO AUDIO ════ */
     const introAudio   = new Audio('_assets/main.mp3');
     introAudio.loop    = false;
     introAudio.preload = 'auto';
     introAudio.volume  = 0;
-    introAudio.muted   = false;
 
-    /* Timestamp when the scramble animation began */
-    let animStartTime = null;
-
-    /* Keep video muted during intro — audio comes from introAudio */
+    /* Keep video muted during intro */
     heroVideo.muted  = true;
     heroVideo.volume = 0;
 
-    /* Called on first ever gesture — ALWAYS starts audio (user muted = false by default) */
-    function unlockAudio() {
-      if (audioUnlocked) return;
-      audioUnlocked = true;
-
-      /* Hide prompt, show toggle */
-      audioPrompt.classList.add('hidden');
-      audioToggle.classList.add('visible');
-      updateIcon();
-
-      if (!userMuted) {
-        if (phase === 'intro') {
-          /* Seek mp3 to match animation elapsed time */
-          const elapsed = animStartTime ? (performance.now() - animStartTime) / 1000 : 0;
-          introAudio.currentTime = Math.min(elapsed, introAudio.duration || elapsed);
-          introAudio.volume = 0;
-          introAudio.play().then(() => {
-            fadeTo(1, introAudio, 0.5);
-          }).catch(() => {});
-        } else {
-          /* Already in main phase — start video audio */
-          heroVideo.muted  = false;
-          heroVideo.volume = 0;
-          heroVideo.play().catch(() => {});
-          fadeTo(modalOpen ? 0.2 : 1, heroVideo, 0.6);
-        }
-      }
-
-      document.removeEventListener('click',      unlockAudio);
-      document.removeEventListener('touchstart', unlockAudio);
-      document.removeEventListener('keydown',    unlockAudio);
-    }
-
-    document.addEventListener('click',      unlockAudio, { passive: true });
-    document.addEventListener('touchstart', unlockAudio, { passive: true });
-    document.addEventListener('keydown',    unlockAudio, { passive: true });
-
-    /* ════ TOGGLE — turn audio on/off after unlock ════ */
-    audioToggle.addEventListener('click', (e) => {
-      e.stopPropagation(); // don't re-trigger unlockAudio
-      userMuted = !userMuted;
-      updateIcon();
-
-      if (!audioUnlocked) return;
-
-      if (phase === 'intro') {
-        if (userMuted) {
-          fadeTo(0, introAudio, 0.4, () => { introAudio.pause(); });
-        } else {
-          const elapsed = animStartTime ? (performance.now() - animStartTime) / 1000 : 0;
-          introAudio.currentTime = Math.min(elapsed, introAudio.duration || elapsed);
-          introAudio.volume = 0;
-          introAudio.play().catch(() => {});
-          fadeTo(1, introAudio, 0.4);
-        }
-      } else {
-        if (userMuted) {
-          fadeTo(0, heroVideo, 0.4, () => { heroVideo.muted = true; });
-        } else {
-          heroVideo.muted  = false;
-          heroVideo.volume = 0;
-          fadeTo(modalOpen ? 0.2 : 1, heroVideo, 0.4);
-        }
-      }
-    });
-
-    /* ── Record when scramble animation begins ── */
-    function startIntroAudio() {
-      animStartTime = performance.now();
-    }
-
-    /* ════ TRANSITION: mp3 out → video audio in ════ */
-    function transitionToMainAudio() {
-      phase = 'main';
-      fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
-
-      if (audioUnlocked && !userMuted) {
-        heroVideo.muted  = false;
-        heroVideo.volume = 0;
-        fadeTo(1, heroVideo, 1.0);
-      }
-    }
-
-    /* ════ VIDEO PLAYBACK — purely visual, always muted until main phase ════ */
+    /* ════ VIDEO PLAYBACK — purely visual, muted until main phase ════ */
     function attemptVideoPlay() {
       heroVideo.muted = true;
       heroVideo.play().catch(() => {
@@ -483,16 +403,86 @@
     if (heroVideo.readyState >= 2) { attemptVideoPlay(); }
     else { heroVideo.addEventListener('canplay', attemptVideoPlay, { once: true }); }
 
+    /* ════ TRANSITION: mp3 out → video audio in ════ */
+    function transitionToMainAudio() {
+      phase = 'main';
+      fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
+      heroVideo.muted  = false;
+      heroVideo.volume = 0;
+      fadeTo(1, heroVideo, 1.0);
+    }
+
+    /* ════ ENTER LETTER JITTER ════ */
+    (function() {
+      const letters = document.querySelectorAll('.enter-letter');
+      const styleEl = document.createElement('style');
+      document.head.appendChild(styleEl);
+
+      letters.forEach((el, i) => {
+        // unique random params per letter
+        const dur    = (2.4 + Math.random() * 2.2).toFixed(2);   // 2.4–4.6s
+        const delay  = (Math.random() * 1.8).toFixed(2);          // 0–1.8s offset
+        const x1     = ((Math.random() * 4) - 2).toFixed(2);      // –2 to +2 px
+        const y1     = ((Math.random() * 4) - 2).toFixed(2);
+        const x2     = ((Math.random() * 4) - 2).toFixed(2);
+        const y2     = ((Math.random() * 4) - 2).toFixed(2);
+        const name   = `jitter${i}`;
+
+        styleEl.sheet.insertRule(`
+          @keyframes ${name} {
+            0%   { transform: translate(0px, 0px); opacity: 0.55; }
+            25%  { transform: translate(${x1}px, ${y1}px); opacity: 0.7; }
+            50%  { transform: translate(${x2}px, ${y2}px); opacity: 0.6; }
+            75%  { transform: translate(${(-x1).toFixed(2)}px, ${(-y2).toFixed(2)}px); opacity: 0.75; }
+            100% { transform: translate(0px, 0px); opacity: 0.55; }
+          }
+        `, styleEl.sheet.cssRules.length);
+
+        el.style.animationName     = name;
+        el.style.animationDuration = `${dur}s`;
+        el.style.animationDelay    = `${delay}s`;
+        el.style.animationTimingFunction = 'cubic-bezier(0.45, 0, 0.55, 1)';
+        el.style.animationIterationCount = 'infinite';
+        el.style.animationDirection      = 'alternate';
+      });
+    })();
+
+    
+    let animStartTime = null;
+    let introStarted  = false;
+
+    function startEverything() {
+      /* Fade gate out */
+      enterGate.classList.add('leaving');
+      enterGate.addEventListener('animationend', () => {
+        enterGate.style.display = 'none';
+      }, { once: true });
+
+      /* Reveal intro screen */
+      introScreen.classList.add('active');
+
+      /* Start mp3 */
+      introAudio.volume = 0;
+      introAudio.play().then(() => {
+        fadeTo(1, introAudio, 0.5);
+      }).catch(() => {});
+
+      /* Kick off scramble animation */
+      animStartTime = performance.now();
+      requestAnimationFrame(scrambleTick);
+      introStarted = true;
+    }
+
+    enterBtn.addEventListener('click', startEverything);
+
     /* ════ INTRO ANIMATION ════ */
-    const introEl     = document.getElementById('intro-text');
-    const introBar    = document.getElementById('intro-bar');
-    const introScreen = document.getElementById('intro-screen');
-    const slide1      = document.getElementById('intro-slide-1');
-    const slide2      = document.getElementById('intro-slide-2');
-    const taglineEl   = document.getElementById('intro-tagline');
+    const introEl  = document.getElementById('intro-text');
+    const introBar = document.getElementById('intro-bar');
+    const slide1   = document.getElementById('intro-slide-1');
+    const slide2   = document.getElementById('intro-slide-2');
+    const taglineEl= document.getElementById('intro-tagline');
 
     const TARGET = 'XENOLITH', CHARS = '#@$%!&*^?~<>|/\\+-=', DURATION = 3200;
-    let startTime = null;
 
     function lerpColor(r1,g1,b1,r2,g2,b2,t) {
       return [Math.round(r1+(r2-r1)*t), Math.round(g1+(g2-g1)*t), Math.round(b1+(b2-b1)*t)];
@@ -500,11 +490,7 @@
     const CR = [228,4,4], CW = [237,236,236];
 
     function scrambleTick(now) {
-      if (!startTime) {
-        startTime = now;
-        startIntroAudio();
-      }
-      const t       = Math.min((now - startTime) / DURATION, 1);
+      const t       = Math.min((now - animStartTime) / DURATION, 1);
       const [r,g,b] = lerpColor(CR[0],CR[1],CR[2],CW[0],CW[1],CW[2], t);
       const col     = `rgb(${r},${g},${b})`;
       const colDim  = `rgba(${r},${g},${b},0.22)`;
@@ -532,7 +518,7 @@
         setTimeout(showTagline, 520);
       }
     }
-    requestAnimationFrame(scrambleTick);
+    /* Note: scrambleTick is NOT called here — it's called from startEverything() */
 
     function showTagline() {
       slide1.style.transition = 'opacity 0.6s ease';
@@ -559,7 +545,7 @@
         description: `We created the music and sound design for "<span class="hl">Red Dreams</span>". Each tone is <span class="hl">raw</span>, <span class="hl">vague</span> and <span class="hl">enigmatic</span>. The result is an experimental soundscape, simple yet open to endless interpretation.`
       },
       {
-        title: null, // coming soon
+        title: null,
         thumbnail: null,
         youtube: null,
         description: null
@@ -573,7 +559,6 @@
       card.style.transitionDelay = `${i*0.08}s`;
 
       if (work.youtube) {
-        // Normal clickable card
         card.innerHTML = `
           <div class="work-card-thumb" style="background-image:url('${work.thumbnail}')"></div>
           <div class="work-card-overlay">
@@ -582,7 +567,6 @@
           </div>`;
         card.addEventListener('click', () => openOverlay(work.youtube, work.description));
       } else {
-        // Coming soon card
         card.innerHTML = `
           <div class="work-card-coming">
             <div class="coming-soon-label">coming soon</div>
@@ -603,7 +587,7 @@
 
     function openOverlay(yt, desc) {
       modalOpen = true;
-      if (audioUnlocked && !userMuted) fadeTo(0.2, heroVideo, 0.4);
+      fadeTo(0.2, heroVideo, 0.4);
       overlayDesc.innerHTML = `<p>${desc}</p>`;
       overlay.classList.add('open');
       overlayVideo.innerHTML = `
@@ -614,7 +598,7 @@
           </svg>
         </div>`;
       document.getElementById('yt-placeholder').addEventListener('click', () => {
-        if (audioUnlocked && !userMuted) fadeTo(0, heroVideo, 0.4);
+        fadeTo(0, heroVideo, 0.4);
         overlayVideo.innerHTML = `<iframe src="${yt}?autoplay=1" frameborder="0"
           allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
           allowfullscreen></iframe>`;
@@ -625,7 +609,7 @@
       modalOpen = false;
       overlay.classList.remove('open');
       overlayVideo.innerHTML = '';
-      if (audioUnlocked && !userMuted) fadeTo(1, heroVideo, 0.5);
+      fadeTo(1, heroVideo, 0.5);
     }
 
     overlayClose.addEventListener('click', closeOverlay);
@@ -647,7 +631,7 @@
       });
       document.addEventListener('mouseleave', () => { cursor.classList.add('invisible'); clearTimeout(idleTimer); });
       document.addEventListener('mouseenter', resetIdle);
-      document.querySelectorAll('a,.work-card,.overlay-close,.qr-link,#audio-toggle,#audio-prompt').forEach(el => {
+      document.querySelectorAll('a,.work-card,.overlay-close,.qr-link,#enter-btn').forEach(el => {
         el.addEventListener('mouseenter', () => cursor.classList.add('expand'));
         el.addEventListener('mouseleave', () => cursor.classList.remove('expand'));
       });
