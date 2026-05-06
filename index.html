@@ -42,7 +42,6 @@
       position: fixed; inset: 0; background: #000;
       z-index: 999999;
       display: flex; align-items: center; justify-content: center;
-      /* FIX: no fade-in — gate is immediately visible, hiding video */
       opacity: 1;
     }
     #enter-gate.leaving {
@@ -60,7 +59,6 @@
       font-family: 'Roboto Mono', monospace; font-weight: 300;
       font-size: clamp(10px, 1.4vw, 16px);
       letter-spacing: 0.45em;
-      /* FIX: lowercase instead of uppercase */
       text-transform: lowercase;
       color: rgba(237,236,236,0.35);
       background: none; border: none; padding: 0;
@@ -365,7 +363,8 @@
     const introAudio   = new Audio('_assets/main.mp3');
     introAudio.loop    = false;
     introAudio.preload = 'auto';
-    introAudio.volume  = 0;
+    // FIX: start at full volume — no fade in
+    introAudio.volume  = 1;
 
     heroVideo.muted  = true;
     heroVideo.volume = 0;
@@ -389,22 +388,23 @@
     /* ════ TRANSITION: mp3 out → video audio in ════ */
     function transitionToMainAudio() {
       phase = 'main';
-      fadeTo(0, introAudio, 1.0, () => { introAudio.pause(); introAudio.currentTime = 0; });
+      // FIX: stop introAudio immediately, no fade
+      introAudio.pause();
+      introAudio.currentTime = 0;
       heroVideo.muted  = false;
       heroVideo.volume = 0;
       fadeTo(1, heroVideo, 1.0);
     }
 
-    /* ════ ENTER LETTER JITTER — FIX: reduced to ±0.6px ════ */
+    /* ════ ENTER LETTER JITTER ════ */
     (function() {
       const letters = document.querySelectorAll('.enter-letter');
       const styleEl = document.createElement('style');
       document.head.appendChild(styleEl);
 
       letters.forEach((el, i) => {
-        const dur    = (3.0 + Math.random() * 2.0).toFixed(2);   // slightly slower
+        const dur    = (3.0 + Math.random() * 2.0).toFixed(2);
         const delay  = (Math.random() * 1.8).toFixed(2);
-        // FIX: reduced from ±2px down to ±0.6px
         const x1     = ((Math.random() * 1.2) - 0.6).toFixed(2);
         const y1     = ((Math.random() * 1.2) - 0.6).toFixed(2);
         const x2     = ((Math.random() * 1.2) - 0.6).toFixed(2);
@@ -441,10 +441,11 @@
 
       introScreen.classList.add('active');
 
-      introAudio.volume = 0;
-      introAudio.play().then(() => {
-        fadeTo(1, introAudio, 0.5);
-      }).catch(() => {});
+      // FIX: reset currentTime to guarantee playback from the very start,
+      // then play immediately at full volume — no fade in
+      introAudio.currentTime = 0;
+      introAudio.volume = 1;
+      introAudio.play().catch(() => {});
 
       animStartTime = performance.now();
       requestAnimationFrame(scrambleTick);
