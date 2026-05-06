@@ -345,33 +345,49 @@
     let phase     = 'intro';
     let modalOpen = false;
 
-    /* ════ generic volume ramp ════ */
-    function fadeTo(target, obj, duration, onDone) {
-      const diff  = target - obj.volume;
-      const steps = Math.max(Math.round(duration * 60), 1);
-      const step  = diff / steps;
-      let count   = 0;
-      ;(function tick() {
-        count++;
-        obj.volume = Math.min(Math.max(obj.volume + step, 0), 1);
-        if (count < steps) { requestAnimationFrame(tick); }
-        else { obj.volume = target; if (onDone) onDone(); }
-      })();
+    /* ════ WEB AUDIO — seamless looping via AudioContext + GainNode ════
+       Using AudioContext instead of heroVideo.volume directly so we can
+       schedule gain ramps with no click artefacts at loop boundaries.    */
+    let audioCtx      = null;   // created on first user gesture
+    let bgSource      = null;   // MediaElementSourceNode wrapping heroVideo
+    let masterGain    = null;   // GainNode — controls perceived "volume"
+    let gainRafId     = null;   // cancel any in-progress RAF ramp
+
+    function ensureAudioCtx() {
+      if (audioCtx) return;
+      audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0;          // start silent; transitionToMainAudio opens it
+      bgSource   = audioCtx.createMediaElementSource(heroVideo);
+      bgSource.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+    }
+
+    /* Smooth gain ramp — replaces the old fadeTo(target, heroVideo, …) calls.
+       Uses AudioContext.currentTime scheduling for click-free transitions.   */
+    function rampGain(target, duration, onDone) {
+      if (!masterGain) return;
+      if (gainRafId) { cancelAnimationFrame(gainRafId); gainRafId = null; }
+      const now  = audioCtx.currentTime;
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+      masterGain.gain.linearRampToValueAtTime(target, now + duration);
+      if (onDone) setTimeout(onDone, duration * 1000 + 20);
     }
 
     /* ════ INTRO AUDIO ════ */
     const introAudio   = new Audio('_assets/main.mp3');
     introAudio.loop    = false;
     introAudio.preload = 'auto';
-    // FIX: start at full volume — no fade in
-    introAudio.volume  = 1;
+    introAudio.volume  = 1;     // full volume, no fade in
 
-    heroVideo.muted  = true;
-    heroVideo.volume = 0;
+    /* Keep heroVideo element itself unmuted + volume=1 so the OS/browser
+       media session is happy; we control loudness via masterGain instead. */
+    heroVideo.muted  = false;
+    heroVideo.volume = 1;
 
     /* ════ VIDEO PLAYBACK ════ */
     function attemptVideoPlay() {
-      heroVideo.muted = true;
       heroVideo.play().catch(() => {
         const r = () => {
           heroVideo.play().catch(() => {});
@@ -382,18 +398,21 @@
         document.addEventListener('click',      r, { once: true });
       });
     }
+    /* Start muted so autoplay works; audio is controlled via GainNode anyway */
+    heroVideo.muted = true;
     if (heroVideo.readyState >= 2) { attemptVideoPlay(); }
     else { heroVideo.addEventListener('canplay', attemptVideoPlay, { once: true }); }
 
-    /* ════ TRANSITION: mp3 out → video audio in ════ */
+    /* ════ TRANSITION: mp3 stops → video audio fades in ════ */
     function transitionToMainAudio() {
       phase = 'main';
-      // FIX: stop introAudio immediately, no fade
       introAudio.pause();
       introAudio.currentTime = 0;
-      heroVideo.muted  = false;
-      heroVideo.volume = 0;
-      fadeTo(1, heroVideo, 1.0);
+      // Unmute video element (GainNode handles the actual level)
+      heroVideo.muted = false;
+      ensureAudioCtx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      rampGain(1, 1.0);   // fade in over 1 s
     }
 
     /* ════ ENTER LETTER JITTER ════ */
@@ -441,8 +460,10 @@
 
       introScreen.classList.add('active');
 
-      // FIX: reset currentTime to guarantee playback from the very start,
-      // then play immediately at full volume — no fade in
+      // Init AudioContext inside user gesture so it's allowed to run
+      ensureAudioCtx();
+
+      // Play main.mp3 immediately from start, full volume, no fade
       introAudio.currentTime = 0;
       introAudio.volume = 1;
       introAudio.play().catch(() => {});
@@ -565,7 +586,8 @@
 
     function openOverlay(yt, desc) {
       modalOpen = true;
-      fadeTo(0.2, heroVideo, 0.4);
+      // Duck background video to 50% when card/modal opens
+      rampGain(0.5, 0.4);
       overlayDesc.innerHTML = `<p>${desc}</p>`;
       overlay.classList.add('open');
       overlayVideo.innerHTML = `
@@ -576,7 +598,8 @@
           </svg>
         </div>`;
       document.getElementById('yt-placeholder').addEventListener('click', () => {
-        fadeTo(0, heroVideo, 0.4);
+        // Mute completely once the YouTube video starts playing
+        rampGain(0, 0.4);
         overlayVideo.innerHTML = `<iframe src="${yt}?autoplay=1" frameborder="0"
           allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
           allowfullscreen></iframe>`;
@@ -587,7 +610,8 @@
       modalOpen = false;
       overlay.classList.remove('open');
       overlayVideo.innerHTML = '';
-      fadeTo(1, heroVideo, 0.5);
+      // Restore background video to full volume
+      rampGain(1, 0.5);
     }
 
     overlayClose.addEventListener('click', closeOverlay);
