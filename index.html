@@ -528,7 +528,8 @@
         ',&nbsp;<span class="blink-red">video</span>' +
         ', and&nbsp;<span class="blink-red">experience</span>.';
       setTimeout(() => slide2.classList.add('visible'), 400);
-      setTimeout(() => transitionToMainAudio(), 4500);
+      //setTimeout(() => transitionToMainAudio(), 4500);
+      introAudio.addEventListener('ended', transitionToMainAudio, { once: true });
       setTimeout(() => {
         introScreen.classList.add('hidden');
         setTimeout(() => { introScreen.style.display = 'none'; }, 950);
